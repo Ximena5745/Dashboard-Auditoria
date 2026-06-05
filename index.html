@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Auditoría - Seguimiento de Hallazgos</title>
     
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -208,9 +213,32 @@
             <div class="row g-3">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Resumen por Auditoría</h6>
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                            <h6 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-chart-bar me-2 text-primary"></i>Resumen por Auditoría
+                            </h6>
                         </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table id="tablaSumariaAuditoria" class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Auditoría</th>
+                                            <th class="text-center">Total</th>
+                                            <th class="text-center"><span class="badge bg-danger">Altos</span></th>
+                                            <th class="text-center"><span class="badge bg-warning text-dark">Medios</span></th>
+                                            <th class="text-center"><span class="badge bg-success">Bajos</span></th>
+                                            <th class="text-center">% Avance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodySumariaAuditoria">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table id="tablaSumariaAuditoria" class="table table-hover mb-0">
@@ -289,8 +317,8 @@
                 <!-- Semáforo de Gestión -->
                 <div class="col-lg-6 col-md-12">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-traffic-light me-2 text-warning"></i>Semáforo de Gestión</h6>
+                        <div class="card-header bg-white py-3">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-traffic-light me-2 text-warning"></i>Semáforo de Gestión</h6>
                         </div>
                         <div class="card-body" id="semaforoGestion">
                             <div class="semaforo-item semaforo-rojo">
@@ -330,8 +358,8 @@
                 <!-- Alertas Automáticas -->
                 <div class="col-lg-6 col-md-12">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-bell me-2 text-danger"></i>Alertas Automáticas</h6>
+                        <div class="card-header bg-white py-3">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-bell me-2 text-danger"></i>Alertas Automáticas</h6>
                         </div>
                         <div class="card-body" id="alertasAutomaticas">
                             <!-- Se llena dinámicamente -->
@@ -345,8 +373,8 @@
                 <!-- Nivel de Riesgo por Proceso -->
                 <div class="col-lg-8 col-md-12">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i>Nivel de Riesgo por Proceso</h6>
+                        <div class="card-header bg-white py-3">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-shield-alt me-2 text-primary"></i>Nivel de Riesgo por Proceso</h6>
                             <small class="text-muted">Calculado por: cantidad de hallazgos · criticidad · reincidencia · vencimientos</small>
                         </div>
                         <div class="card-body" id="riesgoPorProceso">
@@ -358,8 +386,8 @@
                 <!-- Hallazgos Reincidentes -->
                 <div class="col-lg-4 col-md-12">
                     <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="fas fa-redo me-2 text-warning"></i>Hallazgos Reincidentes</h6>
+                        <div class="card-header bg-white py-3">
+                            <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-redo me-2 text-warning"></i>Hallazgos Reincidentes</h6>
                         </div>
                         <div class="card-body" id="reincidenciaDetalle">
                             <!-- Se llena dinámicamente -->
@@ -372,14 +400,16 @@
             <div class="row g-3">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0"><i class="fas fa-list-ol me-2 text-primary"></i>Top 10 — Priorización Inteligente</h6>
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                            <h6 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-list-ol me-2 text-primary"></i>Top 10 — Priorización Inteligente
+                            </h6>
                             <small class="text-muted">Score = Criticidad × Días Vencidos × (100 − % Avance)</small>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table id="tablaTop10" class="table table-hover mb-0">
-                                    <thead class="table-light">
+                                    <thead>
                                         <tr>
                                             <th style="width: 5%">#</th>
                                             <th>Subproceso</th>
@@ -407,22 +437,28 @@
             </h4>
 
             <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h6 class="mb-0 fw-bold text-dark">
+                        <i class="fas fa-table me-2 text-primary"></i>Registros de Hallazgos
+                    </h6>
+                    <small class="text-muted" id="totalRegistros">0 registros</small>
+                </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table id="tablaSeguimientoDetallado" class="table table-hover mb-0">
-                            <thead class="table-light">
+                            <thead>
                                 <tr>
                                     <th>Auditoría</th>
                                     <th>Subproceso</th>
                                     <th>Criticidad</th>
                                     <th>Descripción</th>
                                     <th>Responsable</th>
+                                    <th>Estado</th>
                                     <th>Tipo de Acción</th>
                                     <th class="cond-col cond-col-ac" id="thCond1">Detalle</th>
                                     <th class="cond-col cond-col-pct" id="thCond2">% Avance</th>
                                     <th class="cond-col cond-col-val" id="thCond3">Validación</th>
                                     <th>% Avance</th>
-                                    <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>

@@ -362,6 +362,7 @@ class Dashboard {
             const desc = item.descripcion || '';
             const descShort = desc.length > 50 ? desc.substring(0, 50) + '...' : desc;
             const tipoAccion = item.tipo_accion || '';
+            const avance = item.avance_porcentaje || 0;
 
             const row = document.createElement('tr');
             row.style.cursor = 'pointer';
@@ -371,6 +372,7 @@ class Dashboard {
                 <td><span class="${criticidadClass}">${this.escape(item.criticidad)}</span></td>
                 <td title="${this.escape(desc)}">${this.escape(descShort)}</td>
                 <td>${this.escape(item.responsable_proceso || item.responsable_accion || '')}</td>
+                <td><span class="${estadoClass}">${this.escape(item.estado)}</span></td>
                 <td>
                     <select class="form-select form-select-sm tipo-accion-select" data-index="${idx}" onchange="dashboard.onTipoAccionChange(${idx}, this.value)">
                         <option value="" ${!tipoAccion ? 'selected' : ''}>-- Selec. --</option>
@@ -381,11 +383,13 @@ class Dashboard {
                 </td>
                 ${this.buildCondCells(idx, tipoAccion, item)}
                 <td>
-                    <div style="min-width: 50px;">
-                        <small class="fw-semibold">${item.avance_porcentaje}%</small>
+                    <div class="d-flex align-items-center gap-1">
+                        <div class="progress flex-grow-1" style="height: 6px; min-width: 40px;">
+                            <div class="progress-bar ${avance >= 100 ? 'bg-success' : avance > 0 ? 'bg-primary' : 'bg-secondary'}" style="width: ${avance}%"></div>
+                        </div>
+                        <small class="fw-semibold text-nowrap">${avance}%</small>
                     </div>
                 </td>
-                <td><span class="${estadoClass}">${this.escape(item.estado)}</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" data-index="${idx}" onclick="event.stopPropagation(); dashboard.showDetail(${idx})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
@@ -395,10 +399,12 @@ class Dashboard {
             tbody.appendChild(row);
         });
 
-        // Show/hide conditional column headers
         this.updateConditionalHeaders(data);
 
-        // Inicializar DataTable si no existe
+        // Update record count
+        const countEl = document.getElementById('totalRegistros');
+        if (countEl) countEl.textContent = `${data.length} registros`;
+
         if (!$.fn.DataTable.isDataTable('#tablaSeguimientoDetallado')) {
             $('#tablaSeguimientoDetallado').DataTable({
                 paging: true,
@@ -409,6 +415,121 @@ class Dashboard {
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
                 }
+            });
+        } else {
+            $('#tablaSeguimientoDetallado').DataTable().clear().rows.add($(tbody.querySelectorAll('tr'))).draw();
+        }
+    }
+
+    /**
+     * Construir celdas condicionales según tipo de acción
+     * Column indices: 7=cond-ac, 8=cond-pct, 9=cond-val
+     */
+    buildCondCells(idx, tipo, item) {
+        if (!tipo) {
+            return '<td class="cond-col cond-col-ac"></td><td class="cond-col cond-col-pct"></td><td class="cond-col cond-col-val"></td>';
+        }
+
+        const avance = item.avance_porcentaje || 0;
+        let cond1 = '', cond2 = '', cond3 = '';
+
+        if (tipo === 'Acción Correctiva') {
+            cond1 = `<td class="cond-col cond-col-ac">
+                <span class="cond-cell-label">N° / Desc. AC</span>
+                <input type="text" class="cond-cell-input" value="${this.escape(item.accion_correctiva || '')}"
+                    placeholder="Descripción..."
+                    onchange="dashboard.saveCampoTexto(${idx}, 'accion_correctiva', this.value)">
+            </td>`;
+            cond2 = `<td class="cond-col cond-col-pct">
+                <span class="cond-cell-label">%</span>
+                <input type="number" class="cond-cell-input" value="${avance}" min="0" max="100" style="width:50px;"
+                    onchange="dashboard.saveCampoTexto(${idx}, 'avance_porcentaje', parseInt(this.value))">
+            </td>`;
+            cond3 = `<td class="cond-col cond-col-val">
+                <span class="cond-cell-label">Tipo</span>
+                <input type="text" class="cond-cell-input" value="${this.escape(item.tipo_validacion || '')}"
+                    placeholder="Tipo..."
+                    onchange="dashboard.saveCampoTexto(${idx}, 'tipo_validacion', this.value)">
+                <span class="cond-cell-label" style="margin-top:3px;">Resultado</span>
+                <input type="text" class="cond-cell-input" value="${this.escape(item.resultado_validacion || '')}"
+                    placeholder="Resultado..."
+                    onchange="dashboard.saveCampoTexto(${idx}, 'resultado_validacion', this.value)">
+            </td>`;
+        } else if (tipo === 'Corrección') {
+            cond1 = `<td class="cond-col cond-col-ac">
+                <span class="cond-cell-label">Corrección</span>
+                <textarea class="cond-cell-textarea" rows="2" placeholder="Describa la corrección..."
+                    onchange="dashboard.saveCampoTexto(${idx}, 'correccion_descripcion', this.value)">${this.escape(item.correccion_descripcion || '')}</textarea>
+            </td>`;
+            cond2 = '<td class="cond-col cond-col-pct"></td>';
+            cond3 = '<td class="cond-col cond-col-val"></td>';
+        } else if (tipo === 'Acción de Mejora') {
+            cond1 = `<td class="cond-col cond-col-ac">
+                <span class="cond-cell-label">Mejora</span>
+                <textarea class="cond-cell-textarea" rows="2" placeholder="Describa la mejora..."
+                    onchange="dashboard.saveCampoTexto(${idx}, 'mejora_descripcion', this.value)">${this.escape(item.mejora_descripcion || '')}</textarea>
+            </td>`;
+            cond2 = '<td class="cond-col cond-col-pct"></td>';
+            cond3 = '<td class="cond-col cond-col-val"></td>';
+        }
+
+        return cond1 + cond2 + cond3;
+    }
+
+    /**
+     * Mostrar/ocultar headers de columnas condicionales
+     */
+    updateConditionalHeaders(data) {
+        const tipos = new Set(data.map(d => d.tipo_accion).filter(Boolean));
+        const table = document.getElementById('tablaSeguimientoDetallado');
+        const hasCorrectiva = tipos.has('Acción Correctiva');
+
+        table.classList.toggle('show-col-ac', tipos.size > 0);
+        table.classList.toggle('show-col-pct', hasCorrectiva);
+        table.classList.toggle('show-col-val', hasCorrectiva);
+
+        const th1 = document.getElementById('thCond1');
+        if (tipos.size > 0) {
+            th1.textContent = hasCorrectiva ? 'N° / Desc. AC' : (tipos.has('Corrección') ? 'Corrección' : 'Mejora');
+        }
+    }
+
+    /**
+     * Manejar cambio de Tipo de Acción
+     */
+    onTipoAccionChange(idx, value) {
+        const record = this.currentData[idx];
+        if (record) {
+            record.tipo_accion = value;
+            this.rebuildRowCondCells(idx, value);
+            this.updateConditionalHeaders(this.currentData);
+        }
+    }
+
+    /**
+     * Reconstruir celdas condicionales de una fila específica
+     */
+    rebuildRowCondCells(idx, tipo) {
+        const record = this.currentData[idx];
+        if (!record) return;
+
+        const tbody = document.getElementById('tbodyDetallado');
+        const rows = tbody.querySelectorAll('tr');
+        const row = rows[idx];
+        if (!row) return;
+
+        const cells = row.querySelectorAll('td');
+        const temp = document.createElement('tbody');
+        const tempRow = document.createElement('tr');
+        tempRow.innerHTML = this.buildCondCells(idx, tipo, record);
+        temp.appendChild(tempRow);
+        const newCells = tempRow.querySelectorAll('td');
+
+        // Conditional cells are at indices 7, 8, 9 (after Auditoría, Subproceso, Criticidad, Descripción, Responsable, Estado, Tipo)
+        if (cells[7]) { cells[7].className = newCells[0] ? newCells[0].className : 'cond-col cond-col-ac'; cells[7].innerHTML = newCells[0] ? newCells[0].innerHTML : ''; }
+        if (cells[8]) { cells[8].className = newCells[1] ? newCells[1].className : 'cond-col cond-col-pct'; cells[8].innerHTML = newCells[1] ? newCells[1].innerHTML : ''; }
+        if (cells[9]) { cells[9].className = newCells[2] ? newCells[2].className : 'cond-col cond-col-val'; cells[9].innerHTML = newCells[2] ? newCells[2].innerHTML : ''; }
+    }
             });
         } else {
             $('#tablaSeguimientoDetallado').DataTable().clear().rows.add($(tbody.querySelectorAll('tr'))).draw();
