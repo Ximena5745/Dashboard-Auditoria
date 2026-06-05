@@ -97,6 +97,9 @@
                 <button class="nav-link active" id="tab-resumen" data-bs-toggle="tab" data-bs-target="#vista-resumen" type="button" role="tab" aria-controls="vista-resumen" aria-selected="true">Resumen Ejecutivo</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-gestion" data-bs-toggle="tab" data-bs-target="#vista-gestion" type="button" role="tab" aria-controls="vista-gestion" aria-selected="false">Gestión Operativa</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-seguimiento" data-bs-toggle="tab" data-bs-target="#vista-detallada" type="button" role="tab" aria-controls="vista-detallada" aria-selected="false">Seguimiento Detallado</button>
             </li>
         </ul>
@@ -273,38 +276,131 @@
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="row g-3 mt-3">
+        <!-- VISTA 2: GESTIÓN OPERATIVA -->
+        <section id="vista-gestion" class="tab-pane fade mb-5" role="tabpanel" aria-labelledby="tab-gestion">
+            <h4 class="mb-4 text-dark-emphasis">
+                <i class="fas fa-cogs me-2 text-primary"></i> Gestión Operativa
+            </h4>
+
+            <!-- Fila 1: Semáforo de Gestión + Alertas Automáticas -->
+            <div class="row g-3 mb-4">
+                <!-- Semáforo de Gestión -->
+                <div class="col-lg-6 col-md-12">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-traffic-light me-2 text-warning"></i>Semáforo de Gestión</h6>
+                        </div>
+                        <div class="card-body" id="semaforoGestion">
+                            <div class="semaforo-item semaforo-rojo">
+                                <span class="semaforo-dot bg-danger"></span>
+                                <span class="semaforo-label">Vencidos sin cierre</span>
+                                <span class="semaforo-valor" id="semVencidos">0</span>
+                            </div>
+                            <div class="semaforo-item semaforo-naranja">
+                                <span class="semaforo-dot bg-warning"></span>
+                                <span class="semaforo-label">Próximos a vencer (≤15 días)</span>
+                                <span class="semaforo-valor" id="semProximos">0</span>
+                            </div>
+                            <div class="semaforo-item semaforo-verde">
+                                <span class="semaforo-dot bg-success"></span>
+                                <span class="semaforo-label">En término</span>
+                                <span class="semaforo-valor" id="semTermino">0</span>
+                            </div>
+                            <div class="semaforo-item semaforo-azul">
+                                <span class="semaforo-dot bg-info"></span>
+                                <span class="semaforo-label">Cerrados con validación</span>
+                                <span class="semaforo-valor" id="semCerrados">0</span>
+                            </div>
+                            <div class="semaforo-item semaforo-gris">
+                                <span class="semaforo-dot" style="background-color:#6c757d"></span>
+                                <span class="semaforo-label">Sin responsable asignado</span>
+                                <span class="semaforo-valor" id="semSinResponsable">0</span>
+                            </div>
+                            <div class="semaforo-item semaforo-lila">
+                                <span class="semaforo-dot" style="background-color:#6f42c1"></span>
+                                <span class="semaforo-label">Sin tipo de validación</span>
+                                <span class="semaforo-valor" id="semSinValidacion">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertas Automáticas -->
+                <div class="col-lg-6 col-md-12">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-bell me-2 text-danger"></i>Alertas Automáticas</h6>
+                        </div>
+                        <div class="card-body" id="alertasAutomaticas">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila 2: Nivel de Riesgo por Proceso + Hallazgos Reincidentes -->
+            <div class="row g-3 mb-4">
+                <!-- Nivel de Riesgo por Proceso -->
+                <div class="col-lg-8 col-md-12">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i>Nivel de Riesgo por Proceso</h6>
+                            <small class="text-muted">Calculado por: cantidad de hallazgos · criticidad · reincidencia · vencimientos</small>
+                        </div>
+                        <div class="card-body" id="riesgoPorProceso">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hallazgos Reincidentes -->
+                <div class="col-lg-4 col-md-12">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-redo me-2 text-warning"></i>Hallazgos Reincidentes</h6>
+                        </div>
+                        <div class="card-body" id="reincidenciaDetalle">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila 3: Top 10 Priorización Inteligente -->
+            <div class="row g-3">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Top 10 Hallazgos Críticos para Atención Inmediata</h6>
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fas fa-list-ol me-2 text-primary"></i>Top 10 — Priorización Inteligente</h6>
+                            <small class="text-muted">Score = Criticidad × Días Vencidos × (100 − % Avance)</small>
                         </div>
                         <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="tablaTop10" class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th>Subproceso</th>
-                                    <th>Hallazgo</th>
-                                    <th>Criticidad</th>
-                                    <th>Origen</th>
-                                    <th>Días Vencidos</th>
-                                    <th>% Avance</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyTop10">
-                            </tbody>
-                        </table>
-                    </div>
+                            <div class="table-responsive">
+                                <table id="tablaTop10" class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%">#</th>
+                                            <th>Subproceso</th>
+                                            <th>Hallazgo</th>
+                                            <th>Criticidad</th>
+                                            <th>Origen</th>
+                                            <th>Días Vencidos</th>
+                                            <th>% Avance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyTop10">
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- VISTA 2: SEGUIMIENTO DETALLADO -->
+        <!-- VISTA 3: SEGUIMIENTO DETALLADO -->
         <section id="vista-detallada" class="tab-pane fade mb-5" role="tabpanel" aria-labelledby="tab-seguimiento">
             <h4 class="mb-4 text-dark-emphasis">
                 <i class="fas fa-list-check me-2 text-primary"></i> Seguimiento Detallado

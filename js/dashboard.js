@@ -26,6 +26,7 @@ class Dashboard {
         this.updateCharts(filteredData);
         this.updateTables(filteredData);
         this.updateAlerts(filteredData);
+        this.renderGestionOperativa(filteredData);
         
         // Actualizar hora de última actualización
         const now = new Date();
@@ -453,6 +454,128 @@ class Dashboard {
 
         // Vencidos
         document.getElementById('alertVencidos').textContent = stats.vencidos;
+    }
+
+    /**
+     * Renderizar pestaña de Gestión Operativa
+     */
+    renderGestionOperativa(data) {
+        this.renderSemaforo(data);
+        this.renderAlertasAutomaticas(data);
+        this.renderRiesgoPorProceso(data);
+        this.renderReincidentes(data);
+    }
+
+    /**
+     * Renderizar Semáforo de Gestión
+     */
+    renderSemaforo(data) {
+        const sem = dataManager.getSemaforoData(data);
+        document.getElementById('semVencidos').textContent = sem.vencidos;
+        document.getElementById('semProximos').textContent = sem.proximos;
+        document.getElementById('semTermino').textContent = sem.enTermino;
+        document.getElementById('semCerrados').textContent = sem.cerrados;
+        document.getElementById('semSinResponsable').textContent = sem.sinResponsable;
+        document.getElementById('semSinValidacion').textContent = sem.sinValidacion;
+    }
+
+    /**
+     * Renderizar Alertas Automáticas
+     */
+    renderAlertasAutomaticas(data) {
+        const alertas = dataManager.getAlertasAutomaticas(data);
+        const container = document.getElementById('alertasAutomaticas');
+        container.innerHTML = '';
+
+        alertas.forEach(alerta => {
+            const div = document.createElement('div');
+            let claseExtra = '';
+            if (alerta.tipo === 'critica') claseExtra = 'alerta-critica';
+            else if (alerta.tipo === 'ok') claseExtra = 'alerta-ok';
+            else claseExtra = 'alerta-info';
+
+            div.className = `alerta-item ${claseExtra}`;
+            div.innerHTML = `
+                <span class="alerta-icon"><i class="${alerta.icono}"></i></span>
+                <div class="alerta-texto">
+                    <div>${alerta.texto}</div>
+                    <div class="alerta-detalle">${alerta.detalle}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    /**
+     * Renderizar Nivel de Riesgo por Proceso
+     */
+    renderRiesgoPorProceso(data) {
+        const riesgos = dataManager.getProcessRiskData(data);
+        const container = document.getElementById('riesgoPorProceso');
+        container.innerHTML = '';
+
+        if (riesgos.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">Sin datos disponibles</p>';
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'riesgo-grid';
+
+        riesgos.forEach(proc => {
+            const card = document.createElement('div');
+            card.className = `riesgo-card riesgo-${proc.nivel.toLowerCase()}`;
+            card.innerHTML = `
+                <div class="riesgo-nombre">${this.escape(proc.proceso)}</div>
+                <span class="riesgo-badge riesgo-badge-${proc.nivel.toLowerCase()}">${proc.nivel}</span>
+                <div class="riesgo-stats">${proc.total} hal. · ${proc.vencidos} venc.</div>
+            `;
+            grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+    }
+
+    /**
+     * Renderizar Hallazgos Reincidentes
+     */
+    renderReincidentes(data) {
+        const rein = dataManager.getReincidentData(data);
+        const container = document.getElementById('reincidenciaDetalle');
+        container.innerHTML = '';
+
+        const statsDiv = document.createElement('div');
+        statsDiv.innerHTML = `
+            <div class="row text-center mb-3">
+                <div class="col-6">
+                    <div class="reincidencia-label">Total reincidentes</div>
+                    <div class="reincidencia-valor">${rein.totalReincidentes}</div>
+                </div>
+                <div class="col-6">
+                    <div class="reincidencia-label">% Tasa reincidencia</div>
+                    <div class="reincidencia-pct">${rein.pct}%</div>
+                </div>
+            </div>
+            <div class="reincidencia-label mb-2">Procesos con mayor reincidencia</div>
+        `;
+        container.appendChild(statsDiv);
+
+        if (rein.procesos.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'reincidencia-empty';
+            empty.textContent = 'Sin reincidentes registrados';
+            container.appendChild(empty);
+        } else {
+            const lista = document.createElement('div');
+            lista.className = 'reincidencia-procesos';
+            rein.procesos.forEach(p => {
+                const item = document.createElement('div');
+                item.textContent = '• ' + p;
+                item.style.marginBottom = '4px';
+                lista.appendChild(item);
+            });
+            container.appendChild(lista);
+        }
     }
 
     /**

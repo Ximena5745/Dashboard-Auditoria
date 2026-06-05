@@ -575,6 +575,160 @@ class DataManager {
 
         return clusters;
     }
+
+    /**
+     * Obtener datos del semáforo de gestión
+     */
+    getSemaforoData(data = null) {
+        const records = data || this.consolidatedData;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const vencidos = records.filter(r => r.estado === 'Vencido').length;
+
+        const proximos = records.filter(r => {
+            if (!r.fecha_compromiso) return false;
+            const fecha = this.parseDate(r.fecha_compromiso);
+            if (!fecha) return false;
+            const diff = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+            return diff > 0 && diff <= 15 && r.estado !== 'Cerrado';
+        }).length;
+
+        const enTermino = records.filter(r => {
+            if (r.estado === 'Cerrado' || r.estado === 'Vencido') return false;
+            if (!r.fecha_compromiso) return r.avance_porcentaje < 100;
+            const fecha = this.parseDate(r.fecha_compromiso);
+            if (!fecha) return r.avance_porcentaje < 100;
+            const diff = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+            return diff > 15 && r.avance_porcentaje < 100;
+        }).length;
+
+        const cerrados = records.filter(r => r.estado === 'Cerrado').length;
+
+        const sinResponsable = records.filter(r =>
+            !r.responsable_accion || String(r.responsable_accion).trim() === ''
+        ).length;
+
+        const sinValidacion = records.filter(r =>
+            !r.tipo_validacion || String(r.tipo_validacion).trim() === ''
+        ).length;
+
+        return { vencidos, proximos, enTermino, cerrados, sinResponsable, sinValidacion };
+    }
+
+    /**
+     * Obtener datos de riesgo por proceso
+     */
+    getProcessRiskData(data = null) {
+        const records = data || this.consolidatedData;
+        const clusters = this.getByCluster('proceso', records);
+
+        return Object.entries(clusters).map(([proceso, procRecords]) => {
+            const total = procRecords.length;
+            const criticos = procRecords.filter(r => r.criticidad === 'Alto').length;
+            const vencidos = procRecords.filter(r => r.estado === 'Vencido').length;
+            const reincidentes = procRecords.filter(r => r.es_reincidente).length;
+            const avgAvance = total > 0 ? Math.round(procRecords.reduce((s, r) => s + r.avance_porcentaje, 0) / total) : 0;
+
+            const score = ((criticos * 3) + (vencidos * 2) + (reincidentes * 1.5) - (avgAvance * 0.01)) / total * 10;
+            let nivel = 'Bajo';
+            if (score > 6) nivel = 'Alto';
+            else if (score > 3) nivel = 'Medio';
+
+            const display = procRecords[0].proceso_display || proceso;
+
+            return { proceso: display, nivel, total, criticos, vencidos, reincidentes, avgAvance };
+        }).sort((a, b) => {
+            const order = { 'Alto': 0, 'Medio': 1, 'Bajo': 2 };
+            return order[a.nivel] - order[b.nivel] || b.total - a.total;
+        });
+    }
+
+    /**
+     * Obtener alertas automáticas
+     */
+    getAlertasAutomaticas(data = null) {
+        const records = data || this.consolidatedData;
+        const alertas = [];
+
+        const sinResponsable = records.filter(r =>
+            !r.responsable_accion || String(r.responsable_accion).trim() === ''
+        );
+        if (sinResponsable.length > 0) {
+            alertas.push({
+                tipo: 'critica',
+                icono: 'fas fa-user-slash',
+                texto: `<strong>${sinResponsable.length} hallazgo(s) sin responsable asignado.</strong>`,
+                detalle: 'Asignar responsable en la próxima mesa de trabajo.'
+            });
+        }
+
+        const sinValidacion = records.filter(r =>
+            !r.tipo_validacion || String(r.tipo_validacion).trim() === ''
+        );
+        if (sinValidacion.length > 0) {
+            alertas.push({
+                tipo: 'alerta',
+                icono: 'fas fa-clipboard-check',
+                texto: `<strong>${sinValidacion.length} hallazgo(s) sin tipo de validación definido.</strong>`,
+                detalle: 'Definir estrategia de validación para seguimiento.'
+            });
+        }
+
+        const vencidos = records.filter(r => r.estado === 'Vencido');
+        if (vencidos.length > 0) {
+            alertas.push({
+                tipo: 'critica',
+                icono: 'fas fa-exclamation-triangle',
+                texto: `<strong>${vencidos.length} hallazgo(s) vencidos.</strong>`,
+                detalle: 'Revisar causas de incumplimiento y escalar si es necesario.'
+            });
+        }
+
+        const criticos = records.filter(r => r.criticidad === 'Alto' && r.avance_porcentaje === 0);
+        if (criticos.length > 0) {
+            alertas.push({
+                tipo: 'critica',
+                icono: 'fas fa-fire',
+                texto: `<strong>${criticos.length} hallazgo(s) críticos sin avance.</strong>`,
+                detalle: 'Requieren atención inmediata.'
+            });
+        }
+
+        if (alertas.length === 0) {
+            alertas.push({
+                tipo: 'ok',
+                icono: 'fas fa-check-circle',
+                texto: '<strong>Sin alertas activas.</strong>',
+                detalle: 'Todos los hallazgos están dentro de los parámetros esperados.'
+            });
+        }
+
+        return alertas;
+    }
+
+    /**
+     * Obtener datos de reincidentes por proceso
+     */
+    getReincidentData(data = null) {
+        const records = data || this.consolidatedData;
+        const total = records.length;
+        const reincidentes = records.filter(r => r.es_reincidente);
+        const totalReincidentes = reincidentes.length;
+        const pct = total > 0 ? Math.round((totalReincidentes / total) * 100) : 0;
+
+        const porProceso = {};
+        reincidentes.forEach(r => {
+            const proc = r.proceso_display || r.proceso || 'Sin especificar';
+            porProceso[proc] = (porProceso[proc] || 0) + 1;
+        });
+
+        const procesosLista = Object.entries(porProceso)
+            .sort((a, b) => b[1] - a[1])
+            .map(([proc, count]) => `${proc} (${count})`);
+
+        return { total, totalReincidentes, pct, procesos: procesosLista };
+    }
 }
 
 // Exportar instancia global

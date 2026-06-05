@@ -827,6 +827,193 @@ footer {
     background: var(--gray-500);
 }
 
+/* ========== Gestión Operativa - Semáforo de Gestión ==========*/
+.semaforo-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-md);
+    border-left: 4px solid transparent;
+    transition: transform 0.2s ease;
+}
+
+.semaforo-item:hover {
+    transform: translateX(5px);
+}
+
+.semaforo-rojo { background: #fff5f5; border-left-color: #dc3545; }
+.semaforo-naranja { background: #fff8e1; border-left-color: #ffc107; }
+.semaforo-verde { background: #f1fff1; border-left-color: #28a745; }
+.semaforo-azul { background: #e8f4fd; border-left-color: #17a2b8; }
+.semaforo-gris { background: #f5f5f5; border-left-color: #6c757d; }
+.semaforo-lila { background: #f3f0ff; border-left-color: #6f42c1; }
+
+.semaforo-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+}
+
+.semaforo-label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--gray-700);
+}
+
+.semaforo-valor {
+    font-size: 1.5rem;
+    font-weight: 700;
+    min-width: 50px;
+    text-align: right;
+}
+
+.semaforo-rojo .semaforo-valor { color: #dc3545; }
+.semaforo-naranja .semaforo-valor { color: #e6a800; }
+.semaforo-verde .semaforo-valor { color: #28a745; }
+.semaforo-azul .semaforo-valor { color: #17a2b8; }
+.semaforo-gris .semaforo-valor { color: #6c757d; }
+.semaforo-lila .semaforo-valor { color: #6f42c1; }
+
+/* ========== Gestión Operativa - Alertas Automáticas ==========*/
+.alerta-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-md);
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+}
+
+.alerta-item.alerta-critica {
+    background: #fff5f5;
+    border-left-color: #dc3545;
+}
+
+.alerta-item.alerta-info {
+    background: #e8f4fd;
+    border-left-color: #17a2b8;
+}
+
+.alerta-item.alerta-ok {
+    background: #f1fff1;
+    border-left-color: #28a745;
+}
+
+.alerta-icon {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    margin-top: 2px;
+}
+
+.alerta-texto {
+    flex: 1;
+}
+
+.alerta-texto strong {
+    color: var(--gray-800);
+}
+
+.alerta-texto .alerta-detalle {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+}
+
+/* ========== Gestión Operativa - Riesgo por Proceso ==========*/
+.riesgo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.riesgo-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.riesgo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.riesgo-card.riesgo-alto { border-left-color: #dc3545; }
+.riesgo-card.riesgo-medio { border-left-color: #ffc107; }
+.riesgo-card.riesgo-bajo { border-left-color: #28a745; }
+
+.riesgo-nombre {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.riesgo-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.riesgo-badge-alto { background: #dc3545; color: white; }
+.riesgo-badge-medio { background: #ffc107; color: var(--gray-900); }
+.riesgo-badge-bajo { background: #28a745; color: white; }
+
+.riesgo-stats {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+/* ========== Gestión Operativa - Reincidentes ==========*/
+.reincidencia-stat {
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+}
+
+.reincidencia-valor {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+.reincidencia-pct {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-warning);
+}
+
+.reincidencia-label {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    font-weight: 600;
+}
+
+.reincidencia-procesos {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+}
+
+.reincidencia-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-400);
+    font-style: italic;
+}
+
 /* Print Styles */
 @media print {
     body {
