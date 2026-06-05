@@ -6,6 +6,9 @@ class Dashboard {
     constructor() {
         this.charts = {};
         this.currentData = [];
+        this.detalladoPage = 1;
+        this.detalladoPerPage = 25;
+        this.detalladoSearch = '';
     }
 
     /**
@@ -353,10 +356,51 @@ class Dashboard {
      * Tabla: Seguimiento Detallado
      */
     updateTableSeguimientoDetallado(data) {
+        this._detalladoData = data;
+        this.detalladoPage = 1;
+        this.renderDetalladoTable();
+
+        // Search event
+        const searchInput = document.getElementById('searchDetallado');
+        if (searchInput && !searchInput._bound) {
+            searchInput._bound = true;
+            searchInput.addEventListener('input', (e) => {
+                this.detalladoSearch = e.target.value.toLowerCase();
+                this.detalladoPage = 1;
+                this.renderDetalladoTable();
+            });
+        }
+    }
+
+    renderDetalladoTable() {
+        const data = this._detalladoData || [];
         const tbody = document.getElementById('tbodyDetallado');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
-        data.forEach((item, idx) => {
+        // Filter by search
+        let filtered = data;
+        if (this.detalladoSearch) {
+            filtered = data.filter(item =>
+                (item.auditoria || '').toLowerCase().includes(this.detalladoSearch) ||
+                (item.subproceso || '').toLowerCase().includes(this.detalladoSearch) ||
+                (item.criticidad || '').toLowerCase().includes(this.detalladoSearch) ||
+                (item.descripcion || '').toLowerCase().includes(this.detalladoSearch) ||
+                (item.responsable_proceso || item.responsable_accion || '').toLowerCase().includes(this.detalladoSearch) ||
+                (item.estado || '').toLowerCase().includes(this.detalladoSearch)
+            );
+        }
+
+        // Pagination
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / this.detalladoPerPage) || 1;
+        if (this.detalladoPage > totalPages) this.detalladoPage = totalPages;
+        const start = (this.detalladoPage - 1) * this.detalladoPerPage;
+        const pageData = filtered.slice(start, start + this.detalladoPerPage);
+
+        // Render rows
+        pageData.forEach((item) => {
+            const idx = data.indexOf(item);
             const estadoClass = this.getEstadoClass(item.estado);
             const criticidadClass = this.getCriticidadClass(item.criticidad);
             const desc = item.descripcion || '';
@@ -401,24 +445,47 @@ class Dashboard {
 
         this.updateConditionalHeaders(data);
 
-        // Update record count
+        // Update counts
         const countEl = document.getElementById('totalRegistros');
         if (countEl) countEl.textContent = `${data.length} registros`;
+        const infoEl = document.getElementById('detalladoInfo');
+        if (infoEl) infoEl.textContent = `Mostrando ${start + 1}–${Math.min(start + this.detalladoPerPage, total)} de ${total}${this.detalladoSearch ? ' (filtrado)' : ''}`;
 
-        if (!$.fn.DataTable.isDataTable('#tablaSeguimientoDetallado')) {
-            $('#tablaSeguimientoDetallado').DataTable({
-                paging: true,
-                pageLength: 25,
-                lengthMenu: [10, 25, 50, 100],
-                searching: true,
-                ordering: true,
-                responsive: false,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-                }
-            });
+        // Render pagination
+        this.renderDetalladoPagination(totalPages);
+    }
+
+    renderDetalladoPagination(totalPages) {
+        const ul = document.getElementById('detalladoPagination');
+        if (!ul) return;
+        ul.innerHTML = '';
+
+        const addPage = (label, page, disabled, active) => {
+            const li = document.createElement('li');
+            li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" style="font-size:0.75rem;padding:0.25rem 0.5rem;">${label}</a>`;
+            if (!disabled && !active) {
+                li.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.detalladoPage = page;
+                    this.renderDetalladoTable();
+                });
+            }
+            ul.appendChild(li);
+        };
+
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) addPage(i, i, false, i === this.detalladoPage);
         } else {
-            $('#tablaSeguimientoDetallado').DataTable().clear().rows.add($(tbody.querySelectorAll('tr'))).draw();
+            addPage('«', this.detalladoPage - 1, this.detalladoPage === 1, false);
+            addPage('1', 1, false, this.detalladoPage === 1);
+            if (this.detalladoPage > 3) addPage('...', 0, true, false);
+            for (let i = Math.max(2, this.detalladoPage - 1); i <= Math.min(totalPages - 1, this.detalladoPage + 1); i++) {
+                addPage(i, i, false, i === this.detalladoPage);
+            }
+            if (this.detalladoPage < totalPages - 2) addPage('...', 0, true, false);
+            addPage(totalPages, totalPages, false, this.detalladoPage === totalPages);
+            addPage('»', this.detalladoPage + 1, this.detalladoPage === totalPages, false);
         }
     }
 
@@ -502,34 +569,24 @@ class Dashboard {
         const record = this.currentData[idx];
         if (record) {
             record.tipo_accion = value;
-            this.rebuildRowCondCells(idx, value);
+            // Find the select that triggered this and rebuild its row's cond cells
+            const select = document.querySelector(`.tipo-accion-select[data-index="${idx}"]`);
+            if (select) {
+                const row = select.closest('tr');
+                if (row) {
+                    const cells = row.querySelectorAll('td');
+                    const temp = document.createElement('tbody');
+                    const tempRow = document.createElement('tr');
+                    tempRow.innerHTML = this.buildCondCells(idx, value, record);
+                    temp.appendChild(tempRow);
+                    const newCells = tempRow.querySelectorAll('td');
+                    if (cells[7]) { cells[7].className = newCells[0] ? newCells[0].className : 'cond-col cond-col-ac'; cells[7].innerHTML = newCells[0] ? newCells[0].innerHTML : ''; }
+                    if (cells[8]) { cells[8].className = newCells[1] ? newCells[1].className : 'cond-col cond-col-pct'; cells[8].innerHTML = newCells[1] ? newCells[1].innerHTML : ''; }
+                    if (cells[9]) { cells[9].className = newCells[2] ? newCells[2].className : 'cond-col cond-col-val'; cells[9].innerHTML = newCells[2] ? newCells[2].innerHTML : ''; }
+                }
+            }
             this.updateConditionalHeaders(this.currentData);
         }
-    }
-
-    /**
-     * Reconstruir celdas condicionales de una fila específica
-     */
-    rebuildRowCondCells(idx, tipo) {
-        const record = this.currentData[idx];
-        if (!record) return;
-
-        const tbody = document.getElementById('tbodyDetallado');
-        const rows = tbody.querySelectorAll('tr');
-        const row = rows[idx];
-        if (!row) return;
-
-        const cells = row.querySelectorAll('td');
-        const temp = document.createElement('tbody');
-        const tempRow = document.createElement('tr');
-        tempRow.innerHTML = this.buildCondCells(idx, tipo, record);
-        temp.appendChild(tempRow);
-        const newCells = tempRow.querySelectorAll('td');
-
-        // Conditional cells are at indices 7, 8, 9 (after Auditoría, Subproceso, Criticidad, Descripción, Responsable, Estado, Tipo)
-        if (cells[7]) { cells[7].className = newCells[0] ? newCells[0].className : 'cond-col cond-col-ac'; cells[7].innerHTML = newCells[0] ? newCells[0].innerHTML : ''; }
-        if (cells[8]) { cells[8].className = newCells[1] ? newCells[1].className : 'cond-col cond-col-pct'; cells[8].innerHTML = newCells[1] ? newCells[1].innerHTML : ''; }
-        if (cells[9]) { cells[9].className = newCells[2] ? newCells[2].className : 'cond-col cond-col-val'; cells[9].innerHTML = newCells[2] ? newCells[2].innerHTML : ''; }
     }
 
     /**
