@@ -412,6 +412,7 @@ class Dashboard {
                 lengthMenu: [10, 25, 50, 100],
                 searching: true,
                 ordering: true,
+                responsive: false,
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
                 }
