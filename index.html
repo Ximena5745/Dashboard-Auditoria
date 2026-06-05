@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Auditoría - Seguimiento de Hallazgos</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- SheetJS para lectura de Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF y html2canvas para exportaciones -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar Principal -->
+    <nav class="navbar navbar-dark navbar-expand-lg bg-gradient mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-shield-alt me-2"></i>
+                Dashboard de Auditoría
+            </span>
+            <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light" id="btnRefresh" title="Actualizar datos">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+                <button class="btn btn-sm btn-outline-light" id="btnExportExcel" title="Exportar a Excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-sm btn-outline-light" id="btnExportPdf" title="Exportar a PDF">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <!-- Sección de Filtros Globales -->
+        <section class="filter-panel mb-4 p-3 bg-white rounded-3 shadow-sm">
+            <div class="row g-3">
+                <div class="col-12">
+                    <h5 class="mb-3 text-dark-emphasis">
+                        <i class="fas fa-filter me-2 text-primary"></i> Filtros Globales
+                    </h5>
+                </div>
+
+                <!-- Filtro 1: Proceso -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Proceso</label>
+                    <select id="filterProceso" class="form-select form-select-sm">
+                        <option value="">-- Todos los Procesos --</option>
+                    </select>
+                </div>
+
+                <!-- Filtro 2: Auditoría -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Auditoría</label>
+                    <select id="filterAuditoria" class="form-select form-select-sm">
+                        <option value="">-- Todas las Auditorías --</option>
+                    </select>
+                </div>
+
+                <!-- Filtro 3: Estado -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Estado</label>
+                    <select id="filterEstado" class="form-select form-select-sm">
+                        <option value="">-- Todos los Estados --</option>
+                        <option value="Abierto">Abierto</option>
+                        <option value="En ejecución">En ejecución</option>
+                        <option value="Cerrado">Cerrado</option>
+                        <option value="Vencido">Vencido</option>
+                    </select>
+                </div>
+
+                <!-- Buscador Global -->
+                <div class="col-lg-3 col-md-6 d-flex gap-2">
+                    <input type="text" id="searchGlobal" class="form-control form-control-sm" placeholder="Buscar en todos los campos...">
+                    <button id="btnLimpiarFiltros" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-resumen" data-bs-toggle="tab" data-bs-target="#vista-resumen" type="button" role="tab" aria-controls="vista-resumen" aria-selected="true">Resumen Ejecutivo</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-seguimiento" data-bs-toggle="tab" data-bs-target="#vista-detallada" type="button" role="tab" aria-controls="vista-detallada" aria-selected="false">Seguimiento Detallado</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+        <!-- VISTA 1: RESUMEN EJECUTIVO -->
+        <section id="vista-resumen" class="tab-pane fade show active mb-5" role="tabpanel" aria-labelledby="tab-resumen">
+            <h4 class="mb-4 text-dark-emphasis">
+                <i class="fas fa-chart-line me-2 text-primary"></i> Resumen Ejecutivo
+            </h4>
+
+            <!-- KPI Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-primary">
+                        <div class="kpi-value" id="kpiTotalHallazgos">0</div>
+                        <div class="kpi-label">Total Hallazgos</div>
+                        <div class="kpi-icon"><i class="fas fa-file-alt"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-danger">
+                        <div class="kpi-value" id="kpiCriticos">0</div>
+                        <div class="kpi-label">Hallazgos Críticos</div>
+                        <div class="kpi-icon"><i class="fas fa-exclamation-circle"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-warning">
+                        <div class="kpi-value" id="kpiMedios">0</div>
+                        <div class="kpi-label">Hallazgos Medios</div>
+                        <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-success">
+                        <div class="kpi-value" id="kpiBajos">0</div>
+                        <div class="kpi-label">Hallazgos Bajos</div>
+                        <div class="kpi-icon"><i class="fas fa-info-circle"></i></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-info">
+                        <div class="kpi-value" id="kpiCerrados">0</div>
+                        <div class="kpi-label">Hallazgos Cerrados</div>
+                        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-dark">
+                        <div class="kpi-value" id="kpiVencidos">0</div>
+                        <div class="kpi-label">Hallazgos Vencidos</div>
+                        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-purple">
+                        <div class="kpi-value" id="kpiCumplimiento">0%</div>
+                        <div class="kpi-label">% Cumplimiento Global</div>
+                        <div class="kpi-icon"><i class="fas fa-percent"></i></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="kpi-card bg-teal">
+                        <div class="kpi-value" id="kpiAvancePromedio">0%</div>
+                        <div class="kpi-label">% Avance Promedio</div>
+                        <div class="kpi-icon"><i class="fas fa-trending-up"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="row g-3 mb-4">
+                <!-- Gráfico 1: Criticidad -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Hallazgos por Criticidad</h6>
+                        <canvas id="chartCriticidad"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico 2: Procesos -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Hallazgos por Proceso</h6>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chartProcesos"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico 3: Estados -->
+                <div class="col-lg-4 col-md-12">
+                    <div class="chart-card">
+                        <h6 class="chart-title">Estado de Acciones</h6>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="chartEstados"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla Resumen por Auditoría -->
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Resumen por Auditoría</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="tablaSumariaAuditoria" class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Auditoría</th>
+                                            <th class="text-center">Total</th>
+                                            <th class="text-center"><span class="badge bg-danger">Altos</span></th>
+                                            <th class="text-center"><span class="badge bg-warning">Medios</span></th>
+                                            <th class="text-center"><span class="badge bg-success">Bajos</span></th>
+                                            <th class="text-center">% Avance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodySumariaAuditoria">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas y Priorización -->
+            <div class="row g-3 mt-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="alert-card alert-risk">
+                        <div class="alert-icon"><i class="fas fa-fire"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-label">Nivel de Riesgo Global</div>
+                            <div class="alert-value" id="alertRiesgoGlobal">Bajo</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="alert-card alert-reincidence">
+                        <div class="alert-icon"><i class="fas fa-redo"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-label">Hallazgos Reincidentes</div>
+                            <div class="alert-value" id="alertReincidencia">0</div>
+                            <div class="alert-percentage" id="alertReincidenciaPorc">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="alert-card alert-noProgress">
+                        <div class="alert-icon"><i class="fas fa-pause-circle"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-label">Sin Avance</div>
+                            <div class="alert-value" id="alertSinAvance">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="alert-card alert-expired">
+                        <div class="alert-icon"><i class="fas fa-hourglass-end"></i></div>
+                        <div class="alert-content">
+                            <div class="alert-label">Vencidos</div>
+                            <div class="alert-value" id="alertVencidos">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-3">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Top 10 Hallazgos Críticos para Atención Inmediata</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="tablaTop10" class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%">#</th>
+                                            <th>Código</th>
+                                            <th>Proceso</th>
+                                            <th>Criticidad</th>
+                                            <th>Días Vencidos</th>
+                                            <th>% Avance</th>
+                                            <th>Score Prioridad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyTop10">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 2: SEGUIMIENTO DETALLADO -->
+        <section id="vista-detallada" class="tab-pane fade mb-5" role="tabpanel" aria-labelledby="tab-seguimiento">
+            <h4 class="mb-4 text-dark-emphasis">
+                <i class="fas fa-list-check me-2 text-primary"></i> Seguimiento Detallado
+            </h4>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table id="tablaSeguimientoDetallado" class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Auditoría</th>
+                                    <th>Fecha Detección</th>
+                                    <th>Proceso</th>
+                                    <th>Criticidad</th>
+                                    <th>Descripción</th>
+                                    <th>Responsable</th>
+                                    <th>% Avance</th>
+                                    <th>Estado</th>
+                                    <th>Validación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyDetallado">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+
+        <!-- Panel Lateral - Detalle Hallazgo -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="panelDetalleHallazgo" aria-labelledby="labelDetalleHallazgo">
+            <div class="offcanvas-header border-bottom">
+                <h5 class="offcanvas-title" id="labelDetalleHallazgo">Detalle del Hallazgo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0" id="contenidoDetalleHallazgo">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-4 mt-5">
+        <div class="container-fluid text-center small">
+            <p class="mb-0">Dashboard de Auditoría v1.0 | © 2026 Politécnico Grancolombiano | Últimas actualizaciones: <span id="lastUpdate">--</span></p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- jQuery para DataTables -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <script src="js/dataManager.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/exports.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
