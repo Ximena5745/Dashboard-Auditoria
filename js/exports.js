@@ -31,7 +31,7 @@ class ExportManager {
                 'Código': record.codigo,
                 'Auditoría': record.auditoria,
                 'Origen': record.origen,
-                'Proceso': record.proceso,
+                'Proceso': record.proceso_display || record.proceso,
                 'Criticidad': record.criticidad,
                 'Estado': record.estado,
                 'Descripción': record.descripcion,
@@ -179,7 +179,7 @@ class ExportManager {
                                 <td>${this.escapeHtml(record.codigo)}</td>
                                 <td>${this.escapeHtml(record.auditoria)}</td>
                                 <td>${this.escapeHtml(record.origen)}</td>
-                                <td>${this.escapeHtml(record.proceso).substring(0, 30)}</td>
+                                <td>${this.escapeHtml(record.proceso_display || record.proceso).substring(0, 30)}</td>
                                 <td>${this.escapeHtml(record.criticidad)}</td>
                                 <td>${this.escapeHtml(record.estado)}</td>
                                 <td>${record.avance_porcentaje}%</td>
@@ -261,7 +261,7 @@ class ExportManager {
                     this.escapeCSV(record.codigo),
                     this.escapeCSV(record.auditoria),
                     this.escapeCSV(record.origen),
-                    this.escapeCSV(record.proceso),
+                    this.escapeCSV(record.proceso_display || record.proceso),
                     this.escapeCSV(record.criticidad),
                     this.escapeCSV(record.estado),
                     this.escapeCSV(record.descripcion),

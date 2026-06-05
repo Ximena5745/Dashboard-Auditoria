@@ -8,30 +8,29 @@ class DataManager {
         this.rawData = [];
         this.consolidatedData = [];
         this.excelFile = 'data/Matriz_Seguimiento_Hallazgos.xlsx';
-        
-        // Mapeo de nombres de columnas entre hojas
+
+        // Mapeo de columnas por hoja: clave_interna -> nombre_columna_Excel
         this.columnMapping = {
             'Base Hallazgos SIG': {
                 'codigo': 'Código Hallazgo',
                 'fecha_deteccion': 'Fecha de Detección',
                 'auditoria': 'Auditoría',
-                'proceso': 'Proceso / Subproceso Auditado',
+                'proceso': 'Proceso',
+                'subproceso': 'Subproceso',
                 'responsable_proceso': 'Responsable del Proceso',
-                'criticidad': 'Criticidad',
                 'criterio_incumplido': 'Criterio Incumplido',
                 'descripcion': 'Descripción del Hallazgo',
                 'evidencia': 'Evidencia',
                 'causa_raiz': 'Causa Raíz',
                 'riesgos': 'Riesgos Asociados',
                 'accion_correctiva': 'Acción Correctiva',
-                'avance_original': 'Avance',
+                'avance_raw': 'Avance',
                 'tipo_accion': 'Tipo de Acción',
                 'responsable_accion': 'Responsable de la Acción',
                 'area_responsable': 'Área Responsable',
                 'fecha_compromiso': 'Fecha Compromiso',
                 'evidencia_esperada': 'Evidencia Esperada',
                 'indicador_cumplimiento': 'Indicador de Cumplimiento',
-                'estado_automatico': 'Estado Automático',
                 'avance_porcentaje': '% Avance',
                 'fecha_ultimo_seguimiento': 'Fecha Último Seguimiento',
                 'observaciones': 'Observaciones de Seguimiento',
@@ -50,7 +49,8 @@ class DataManager {
                 'codigo': 'Código Hallazgo',
                 'fecha_deteccion': 'Fecha de Cierre',
                 'auditoria': 'Auditoría',
-                'proceso': 'Proceso / Subproceso Auditado',
+                'proceso': 'Proceso',
+                'subproceso': 'Subproceso',
                 'responsable_proceso': 'Responsable del Proceso',
                 'criticidad': 'Criticidad',
                 'criterio_incumplido': 'Criterio Incumplido',
@@ -63,7 +63,6 @@ class DataManager {
                 'fecha_compromiso': 'Fecha Compromiso',
                 'evidencia_esperada': 'Evidencia Esperada',
                 'indicador_cumplimiento': 'Indicador de Cumplimiento',
-                'estado_automatico': 'Estado Automático',
                 'avance_porcentaje': '% Avance',
                 'fecha_ultimo_seguimiento': 'Fecha Último Seguimiento',
                 'observaciones': 'Observaciones de Seguimiento',
@@ -79,6 +78,9 @@ class DataManager {
                 'comentarios_cierre': 'Comentarios de Cierre'
             }
         };
+
+        // Columnas clave para determinar si una fila tiene datos reales
+        this.keyColumns = ['codigo', 'auditoria', 'proceso', 'descripcion'];
     }
 
     /**
@@ -88,7 +90,6 @@ class DataManager {
         try {
             console.log(`🔎 Intentando cargar archivo Excel: ${this.excelFile}`);
             const response = await fetch(this.excelFile);
-            console.log('🔁 Fetch response:', response);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status} ${response.statusText} al solicitar ${this.excelFile}`);
             }
@@ -102,60 +103,60 @@ class DataManager {
                 throw new Error('SheetJS no pudo leer el archivo: ' + (e.message || e));
             }
 
-            console.log('📑 Hojas detectadas en el workbook:', workbook.SheetNames);
-            console.log('📑 Hojas (visibles con delimitadores):', workbook.SheetNames.map(s => `[${s}]`).join(', '));
-            
+            console.log('📑 Hojas detectadas:', workbook.SheetNames);
+
+            this.rawData = [];
+
             // Hojas a procesar
             const sheetsToProcess = ['Base Hallazgos SIG', 'Base Hallazgos Aseguramiento'];
-            
+
             sheetsToProcess.forEach((sheetName, index) => {
                 const exists = workbook.SheetNames.includes(sheetName);
-                console.log(`🔍 Comprobando hoja esperada: [${sheetName}] -> existe: ${exists}`);
                 if (!exists) {
                     console.warn(`⚠ Hoja no encontrada: ${sheetName}`);
-                    console.log('📑 Hojas disponibles:', workbook.SheetNames.map(s => `[${s}]`).join(', '));
                     return;
                 }
-                
+
                 const worksheet = workbook.Sheets[sheetName];
-                const data = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-                console.log(`📄 Hoja '${sheetName}' - filas detectadas: ${data.length}`);
+                const allData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                console.log(`📄 Hoja '${sheetName}' - filas totales en Excel: ${allData.length}`);
+
+                // Filtrar filas completamente vacías (sin datos en columnas clave)
+                const data = allData.filter(row => {
+                    return this.keyColumns.some(key => {
+                        const mapping = this.columnMapping[sheetName];
+                        const excelCol = mapping[key];
+                        const val = row[excelCol];
+                        return val !== undefined && val !== null && String(val).trim() !== '';
+                    });
+                });
+
+                console.log(`📄 Hoja '${sheetName}' - filas con datos reales: ${data.length} (filtradas ${allData.length - data.length} vacías)`);
+
                 if (data.length > 0) {
-                    console.log('📌 Ejemplo fila 0:', data[0]);
-                    console.log('🔤 Encabezados detectados (fila 0):', Object.keys(data[0]));
-
-                    const codigoKey = 'Código Hallazgo';
-                    const nonEmptyCodigo = data.filter(r => String(r[codigoKey] || '').trim() !== '').length;
-                    console.log(`🔎 Filas con '${codigoKey}' no vacío: ${nonEmptyCodigo}`);
-
-                    const possibleCodigoKeys = Object.keys(data[0]).filter(k => /codigo|código/i.test(k));
-                    console.log('🔎 Posibles nombres de columna que contienen "codigo":', possibleCodigoKeys);
+                    console.log('📌 Ejemplo fila:', JSON.stringify(data[0]).substring(0, 300));
+                    console.log('🔤 Encabezados Excel:', Object.keys(data[0]));
                 }
 
-                // Procesar registros (generar código si falta)
-                let generatedCount = 0;
+                // Procesar registros
                 data.forEach((row, rowIndex) => {
-                    const record = this.normalizeRecord(row, sheetName);
+                    const record = this.normalizeRecord(row, sheetName, index);
 
-                    // Si no tiene código, generamos uno para poder incluir el registro
+                    // Si no tiene código, generamos uno
                     if (!record.codigo || String(record.codigo).trim() === '') {
                         const shortSheet = sheetName.replace(/\s+/g, '').substring(0, 8);
                         record.codigo = `GEN-${shortSheet}-${index + 1}-${rowIndex + 1}`;
                         record._generatedCodigo = true;
-                        generatedCount++;
                     }
 
-                    if (record.codigo) {
-                        record.origen = index === 0 ? 'SIG' : 'Aseguramiento';
-                        this.rawData.push(record);
-                    }
+                    record.origen = index === 0 ? 'SIG' : 'Aseguramiento';
+                    this.rawData.push(record);
                 });
-                if (generatedCount > 0) console.log(`⚙️ Códigos generados en hoja '${sheetName}': ${generatedCount}`);
             });
-            
+
             // Consolidar y procesar datos
             this.consolidateData();
-            console.log(`✓ Raw rows agregadas: ${this.rawData.length}`);
+            console.log(`✓ Registros totales válidos: ${this.rawData.length}`);
             console.log(`✓ Datos consolidados: ${this.consolidatedData.length} registros`);
             return true;
         } catch (error) {
@@ -168,25 +169,97 @@ class DataManager {
     /**
      * Normalizar registro (mapear columnas)
      */
-    normalizeRecord(row, sheetName) {
+    normalizeRecord(row, sheetName, sheetIndex) {
         const mapping = this.columnMapping[sheetName];
         const normalized = {};
-        
+
         Object.keys(mapping).forEach(key => {
             const excelColumnName = mapping[key];
-            normalized[key] = row[excelColumnName] || '';
+            normalized[key] = row[excelColumnName] !== undefined ? row[excelColumnName] : '';
         });
-        
-        // Procesar valores
-        normalized.criticidad = String(normalized.criticidad).trim();
+
+        // Construir proceso combinando Proceso + Subproceso si ambos existen
+        const proceso = String(normalized.proceso || '').trim();
+        const subproceso = String(normalized.subproceso || '').trim();
+        if (proceso && subproceso && proceso !== subproceso) {
+            normalized.proceso_display = `${proceso} - ${subproceso}`;
+        } else if (proceso) {
+            normalized.proceso_display = proceso;
+        } else if (subproceso) {
+            normalized.proceso_display = subproceso;
+        } else {
+            normalized.proceso_display = '';
+        }
+
+        // Criticidad: para SIG no existe la columna, intentar inferir
+        normalized.criticidad = this.inferCriticidad(normalized, sheetName);
+
+        // Avance: manejar tanto decimal (0.4) como porcentaje (40) como string ("40%")
+        normalized.avance_porcentaje = this.parseAvance(normalized);
+
+        // Estado: determinar lógicamente ya que las fórmulas de Excel no se evalúan
         normalized.estado = this.determineState(normalized);
-        normalized.avance_porcentaje = this.parsePercentage(normalized.avance_porcentaje);
+
+        // Días vencidos
         normalized.dias_vencidos = this.calculateDaysOverdue(normalized.fecha_compromiso);
+
+        // Semáforo
         normalized.semaforo = this.calculateTrafficLight(normalized);
-        normalized.es_reincidente = String(normalized.reincidencia).toLowerCase().includes('si') || 
-                                   String(normalized.reincidencia).toLowerCase().includes('yes');
-        
+
+        // Reincidencia
+        normalized.es_reincidente = String(normalized.reincidencia || '').toLowerCase().includes('si') ||
+                                   String(normalized.reincidencia || '').toLowerCase().includes('yes');
+
         return normalized;
+    }
+
+    /**
+     * Inferir criticidad cuando no existe la columna
+     * Para SIG no hay columna Criticidad; inferimos del Criterio Incumplido o默认 'Medio'
+     */
+    inferCriticidad(record, sheetName) {
+        // Si ya tiene criticidad válida (ASEG la tiene)
+        const crit = String(record.criticidad || '').trim();
+        if (['Alto', 'Medio', 'Bajo'].includes(crit)) {
+            return crit;
+        }
+
+        // Para SIG: no hay columna Criticidad, usar lógica de inferencia
+        // Si el avance es 100% => Bajo (resuelto)
+        // Si el avance es 0% => Alto (no iniciado)
+        // Si tiene avance parcial => Medio
+        const avance = record.avance_porcentaje || 0;
+        if (avance >= 1) return 'Bajo';
+        if (avance === 0) return 'Alto';
+        return 'Medio';
+    }
+
+    /**
+     * Parsear avance desde múltiples formatos posibles
+     * - Decimal: 0.4 -> 40%
+     * - Porcentaje directo: 40 -> 40%
+     * - String: "40%" -> 40%
+     */
+    parseAvance(record) {
+        // Intentar con % Avance primero
+        let val = record.avance_porcentaje;
+        let num = this.parsePercentage(val);
+        if (num > 0) return num;
+
+        // Si % Avance está vacío, usar columna "Avance" (decimal)
+        val = record.avance_raw;
+        if (val === undefined || val === null || val === '') return 0;
+
+        const str = String(val).replace('%', '').trim();
+        const parsed = parseFloat(str);
+        if (isNaN(parsed)) return 0;
+
+        // Si el valor es decimal (0-1), convertir a porcentaje
+        if (parsed >= 0 && parsed <= 1) {
+            return Math.round(parsed * 100);
+        }
+        // Si ya es porcentaje (>1)
+        return Math.min(100, Math.max(0, Math.round(parsed)));
     }
 
     /**
@@ -200,22 +273,23 @@ class DataManager {
     }
 
     /**
-     * Determinar estado
+     * Determinar estado basado en los datos disponibles
      */
     determineState(record) {
-        const estado = String(record.estado_automatico).toLowerCase();
-        
+        // Si ya tiene un estado Automático válido
+        const estado = String(record.estado_automatico || '').toLowerCase();
         if (estado.includes('cerrado')) return 'Cerrado';
         if (estado.includes('vencido')) return 'Vencido';
         if (estado.includes('ejecución') || estado.includes('execution')) return 'En ejecución';
         if (estado.includes('abierto')) return 'Abierto';
-        
-        // Lógica alternativa por fecha
+
+        // Determinar por lógica de negocio
+        const avance = record.avance_porcentaje || 0;
         const diasVencidos = this.calculateDaysOverdue(record.fecha_compromiso);
+
+        if (avance >= 100) return 'Cerrado';
         if (diasVencidos > 0) return 'Vencido';
-        if (record.avance_porcentaje === 100 || record.avance_porcentaje === '100') return 'Cerrado';
-        if (record.avance_porcentaje > 0) return 'En ejecución';
-        
+        if (avance > 0) return 'En ejecución';
         return 'Abierto';
     }
 
@@ -224,10 +298,9 @@ class DataManager {
      */
     calculateTrafficLight(record) {
         const diasVencidos = this.calculateDaysOverdue(record.fecha_compromiso);
-        
-        if (diasVencidos > 0) return 'Vencido'; // 🔴
-        if (diasVencidos > -5) return 'Próximo a vencer'; // 🟡
-        return 'En término'; // 🟢
+        if (diasVencidos > 0) return 'Vencido';
+        if (diasVencidos > -5) return 'Próximo a vencer';
+        return 'En término';
     }
 
     /**
@@ -235,16 +308,14 @@ class DataManager {
      */
     calculateDaysOverdue(dateString) {
         if (!dateString) return 0;
-        
         const date = this.parseDate(dateString);
         if (!date) return 0;
-        
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const diffTime = today - date;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
         return diffDays;
     }
 
@@ -253,28 +324,33 @@ class DataManager {
      */
     parseDate(dateString) {
         if (!dateString) return null;
-        
-        // Si es número (formato Excel)
+
+        // Si es número (formato Excel serial)
         if (typeof dateString === 'number') {
             const excelDate = new Date((dateString - 25569) * 86400 * 1000);
             return excelDate;
         }
-        
+
+        // Si es Date
+        if (dateString instanceof Date) {
+            return isNaN(dateString.getTime()) ? null : dateString;
+        }
+
         // String
         dateString = String(dateString).trim();
-        
+        if (!dateString) return null;
+
         const formats = [
-            /(\d{4})-(\d{2})-(\d{2})/, // YYYY-MM-DD
+            /(\d{4})-(\d{2})-(\d{2})/,  // YYYY-MM-DD
             /(\d{2})\/(\d{2})\/(\d{4})/, // DD/MM/YYYY
-            /(\d{2})-(\d{2})-(\d{4})/, // DD-MM-YYYY
-            /(\d{4})\/(\d{2})\/(\d{2})/ // YYYY/MM/DD
+            /(\d{2})-(\d{2})-(\d{4})/,   // DD-MM-YYYY
+            /(\d{4})\/(\d{2})\/(\d{2})/  // YYYY/MM/DD
         ];
-        
+
         for (let format of formats) {
             const match = dateString.match(format);
             if (match) {
                 let year, month, day;
-                
                 if (match[1].length === 4) {
                     year = parseInt(match[1]);
                     month = parseInt(match[2]) - 1;
@@ -284,11 +360,10 @@ class DataManager {
                     month = parseInt(match[2]) - 1;
                     year = parseInt(match[3]);
                 }
-                
                 return new Date(year, month, day);
             }
         }
-        
+
         return null;
     }
 
@@ -296,62 +371,33 @@ class DataManager {
      * Parsear porcentaje
      */
     parsePercentage(value) {
-        if (!value) return 0;
-        
+        if (value === undefined || value === null || value === '') return 0;
         const str = String(value).replace('%', '').trim();
         const num = parseFloat(str);
-        
         return isNaN(num) ? 0 : Math.min(100, Math.max(0, num));
     }
 
     /**
      * Calcular score de prioridad
-     * Fórmula: Criticidad × Días vencidos × (100 - % Avance)
      */
     calculatePriorityScore(record) {
         const criticidadMap = { 'Alto': 3, 'Medio': 2, 'Bajo': 1 };
         const criticidad = criticidadMap[record.criticidad] || 1;
-        const diasVencidos = Math.max(0, record.dias_vencidos + 1); // +1 para evitar 0
+        const diasVencidos = Math.max(0, record.dias_vencidos + 1);
         const avanceRestante = 100 - record.avance_porcentaje;
-        
         return criticidad * diasVencidos * avanceRestante;
     }
 
     /**
-     * Obtener único de valores en un campo
+     * Obtener procesos únicos
      */
     getUniqueProcesos() {
         const procesos = new Set();
         this.consolidatedData.forEach(record => {
-            if (record.proceso) {
-                procesos.add(record.proceso);
-            }
+            const proc = record.proceso_display || record.proceso;
+            if (proc) procesos.add(proc);
         });
         return Array.from(procesos).sort();
-    }
-
-    /**
-     * Obtener subprocesos por proceso
-     */
-    getSubprocesos(proceso) {
-        if (!proceso) {
-            const subprocesos = new Set();
-            this.consolidatedData.forEach(record => {
-                if (record.proceso) {
-                    subprocesos.add(record.proceso);
-                }
-            });
-            return Array.from(subprocesos).sort();
-        }
-        
-        // Si el campo contiene ambos proceso/subproceso separados
-        const subprocesos = new Set();
-        this.consolidatedData.forEach(record => {
-            if (record.proceso && record.proceso.includes(proceso)) {
-                subprocesos.add(record.proceso);
-            }
-        });
-        return Array.from(subprocesos).sort();
     }
 
     /**
@@ -360,9 +406,7 @@ class DataManager {
     getAuditorias() {
         const auditorias = new Set();
         this.consolidatedData.forEach(record => {
-            if (record.auditoria) {
-                auditorias.add(record.auditoria);
-            }
+            if (record.auditoria) auditorias.add(record.auditoria);
         });
         return Array.from(auditorias).sort();
     }
@@ -372,13 +416,14 @@ class DataManager {
      */
     filterData(filters) {
         return this.consolidatedData.filter(record => {
-            if (filters.proceso && record.proceso !== filters.proceso) return false;
-            if (filters.subproceso && record.proceso !== filters.subproceso) return false;
+            if (filters.proceso) {
+                const proc = record.proceso_display || record.proceso;
+                if (proc !== filters.proceso) return false;
+            }
             if (filters.auditoria && record.auditoria !== filters.auditoria) return false;
             if (filters.criticidad && record.criticidad !== filters.criticidad) return false;
             if (filters.estado && record.estado !== filters.estado) return false;
             if (filters.origen && record.origen !== filters.origen) return false;
-            
             return true;
         });
     }
@@ -405,30 +450,20 @@ class DataManager {
      */
     getStatistics(data = null) {
         const allRecords = data || this.consolidatedData;
-
-        // Excluir registros cuyos códigos fueron generados automáticamente
-        const records = allRecords.filter(r => !r._generatedCodigo);
-
         const stats = {
-            total: records.length,
-            criticos: records.filter(r => r.criticidad === 'Alto').length,
-            medios: records.filter(r => r.criticidad === 'Medio').length,
-            bajos: records.filter(r => r.criticidad === 'Bajo').length,
-            cerrados: records.filter(r => r.estado === 'Cerrado').length,
-            vencidos: records.filter(r => r.estado === 'Vencido').length,
-            sin_avance: records.filter(r => r.avance_porcentaje === 0).length,
-            reincidentes: records.filter(r => r.es_reincidente).length,
+            total: allRecords.length,
+            criticos: allRecords.filter(r => r.criticidad === 'Alto').length,
+            medios: allRecords.filter(r => r.criticidad === 'Medio').length,
+            bajos: allRecords.filter(r => r.criticidad === 'Bajo').length,
+            cerrados: allRecords.filter(r => r.estado === 'Cerrado').length,
+            vencidos: allRecords.filter(r => r.estado === 'Vencido').length,
+            sin_avance: allRecords.filter(r => r.avance_porcentaje === 0).length,
+            reincidentes: allRecords.filter(r => r.es_reincidente).length,
         };
-        
-        // Porcentajes
+
         stats.pct_cumplimiento = stats.total > 0 ? Math.round((stats.cerrados / stats.total) * 100) : 0;
-        stats.avance_promedio = records.length > 0 ? Math.round(records.reduce((sum, r) => sum + r.avance_porcentaje, 0) / records.length) : 0;
+        stats.avance_promedio = stats.total > 0 ? Math.round(allRecords.reduce((sum, r) => sum + r.avance_porcentaje, 0) / stats.total) : 0;
         stats.pct_reincidencia = stats.total > 0 ? Math.round((stats.reincidentes / stats.total) * 100) : 0;
-        
-        // Debug: mostrar comparación entre total raw y total usado en estadísticas
-        if ((allRecords.length - records.length) > 0) {
-            console.log(`ℹ️ Estadísticas calculadas: ${records.length} registros válidos (excluidos ${allRecords.length - records.length} con códigos generados).`);
-        }
 
         return stats;
     }
@@ -439,11 +474,12 @@ class DataManager {
     getSummaryByAuditoria(data = null) {
         const records = data || this.consolidatedData;
         const summary = {};
-        
+
         records.forEach(record => {
-            if (!summary[record.auditoria]) {
-                summary[record.auditoria] = {
-                    auditoria: record.auditoria,
+            const aud = record.auditoria || 'Sin Auditoría';
+            if (!summary[aud]) {
+                summary[aud] = {
+                    auditoria: aud,
                     total: 0,
                     altos: 0,
                     medios: 0,
@@ -451,20 +487,19 @@ class DataManager {
                     avance_sum: 0
                 };
             }
-            
-            summary[record.auditoria].total++;
-            if (record.criticidad === 'Alto') summary[record.auditoria].altos++;
-            if (record.criticidad === 'Medio') summary[record.auditoria].medios++;
-            if (record.criticidad === 'Bajo') summary[record.auditoria].bajos++;
-            summary[record.auditoria].avance_sum += record.avance_porcentaje;
+
+            summary[aud].total++;
+            if (record.criticidad === 'Alto') summary[aud].altos++;
+            if (record.criticidad === 'Medio') summary[aud].medios++;
+            if (record.criticidad === 'Bajo') summary[aud].bajos++;
+            summary[aud].avance_sum += record.avance_porcentaje;
         });
-        
-        // Calcular porcentaje promedio
+
         Object.values(summary).forEach(item => {
-            item.avance_promedio = Math.round(item.avance_sum / item.total);
+            item.avance_promedio = item.total > 0 ? Math.round(item.avance_sum / item.total) : 0;
         });
-        
-        return Object.values(summary);
+
+        return Object.values(summary).sort((a, b) => b.total - a.total);
     }
 
     /**
@@ -482,36 +517,38 @@ class DataManager {
      */
     calculateProcessRisk(data = null) {
         const records = data || this.consolidatedData;
-        
         if (records.length === 0) return 'Bajo';
-        
+
         const criticos = records.filter(r => r.criticidad === 'Alto').length;
         const vencidos = records.filter(r => r.estado === 'Vencido').length;
         const reincidentes = records.filter(r => r.es_reincidente).length;
         const promedio_avance = records.reduce((sum, r) => sum + r.avance_porcentaje, 0) / records.length;
-        
-        // Scoring: criticos (peso 3) + vencidos (peso 2) + reincidentes (peso 1.5) - avance (peso 0.01)
+
         const score = (criticos * 3) + (vencidos * 2) + (reincidentes * 1.5) - (promedio_avance * 0.01);
         const normalized_score = (score / records.length) * 10;
-        
+
         if (normalized_score > 6) return 'Alto';
         if (normalized_score > 3) return 'Medio';
         return 'Bajo';
     }
 
     /**
-     * Obtener datos agrupados por criticidad
+     * Obtener datos agrupados por campo
      */
     getByCluster(groupBy, data = null) {
         const records = data || this.consolidatedData;
         const clusters = {};
-        
+
         records.forEach(record => {
-            const key = record[groupBy] || 'Sin especificar';
+            let key = record[groupBy] || 'Sin especificar';
+            // Para proceso, usar proceso_display
+            if (groupBy === 'proceso') {
+                key = record.proceso_display || record.proceso || 'Sin especificar';
+            }
             if (!clusters[key]) clusters[key] = [];
             clusters[key].push(record);
         });
-        
+
         return clusters;
     }
 }

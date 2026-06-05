@@ -114,7 +114,19 @@ class Dashboard {
      */
     updateChartProcesos(data) {
         const clusters = dataManager.getByCluster('proceso', data);
-        const labels = Object.keys(clusters).slice(0, 10); // Top 10 procesos
+        // Usar proceso_display para etiquetas más descriptivas
+        const processLabels = {};
+        data.forEach(record => {
+            const clusterKey = record.proceso || 'Sin especificar';
+            const displayKey = record.proceso_display || record.proceso || 'Sin especificar';
+            if (!processLabels[clusterKey]) processLabels[clusterKey] = displayKey;
+        });
+
+        const labels = Object.keys(clusters).slice(0, 10);
+        const displayLabels = labels.map(l => {
+            const display = processLabels[l] || l;
+            return display.length > 35 ? display.substring(0, 35) + '...' : display;
+        });
         const values = labels.map(label => clusters[label].length);
         
         const ctx = document.getElementById('chartProcesos').getContext('2d');
@@ -126,7 +138,7 @@ class Dashboard {
         this.charts.procesos = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: displayLabels,
                 datasets: [{
                     label: 'Cantidad de Hallazgos',
                     data: values,
@@ -277,7 +289,7 @@ class Dashboard {
                 <td><strong>${this.escape(item.codigo)}</strong></td>
                 <td>${this.escape(item.auditoria)}</td>
                 <td>${this.formatDate(item.fecha_deteccion)}</td>
-                <td>${this.escape(item.proceso).substring(0, 30)}...</td>
+                <td>${this.escape(item.proceso_display || item.proceso).substring(0, 30)}...</td>
                 <td><span class="${criticidadClass}">${this.escape(item.criticidad)}</span></td>
                 <td>${this.escape(item.descripcion).substring(0, 40)}...</td>
                 <td>${this.escape(item.responsable_proceso)}</td>
@@ -330,7 +342,7 @@ class Dashboard {
             row.innerHTML = `
                 <td class="text-center fw-bold">${idx + 1}</td>
                 <td><strong>${this.escape(item.codigo)}</strong></td>
-                <td>${this.escape(item.proceso).substring(0, 25)}...</td>
+                <td>${this.escape(item.proceso_display || item.proceso).substring(0, 25)}...</td>
                 <td><span class="${criticidadClass}">${this.escape(item.criticidad)}</span></td>
                 <td class="text-center">
                     <span class="badge bg-danger">${Math.max(0, item.dias_vencidos)} días</span>
@@ -387,7 +399,7 @@ class Dashboard {
 
             <div class="detail-section">
                 <div class="detail-label">Proceso / Subproceso</div>
-                <div class="detail-value">${this.escape(record.proceso)}</div>
+                <div class="detail-value">${this.escape(record.proceso_display || record.proceso)}</div>
             </div>
 
             <div class="detail-section">

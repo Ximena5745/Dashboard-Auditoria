@@ -61,7 +61,7 @@ class FilterManager {
      * Llenar opciones de filtros
      */
     populateFilterOptions() {
-        // Procesos
+        // Procesos (usar proceso_display para mostrar valores más descriptivos)
         const procesos = dataManager.getUniqueProcesos();
         const selectProceso = document.getElementById('filterProceso');
         procesos.forEach(proceso => {
