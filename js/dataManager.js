@@ -606,7 +606,8 @@ class DataManager {
         const cerrados = records.filter(r => r.estado === 'Cerrado').length;
 
         const sinResponsable = records.filter(r =>
-            !r.responsable_accion || String(r.responsable_accion).trim() === ''
+            (!r.responsable_accion || String(r.responsable_accion).trim() === '') &&
+            (!r.responsable_proceso || String(r.responsable_proceso).trim() === '')
         ).length;
 
         const sinValidacion = records.filter(r =>
@@ -652,7 +653,8 @@ class DataManager {
         const alertas = [];
 
         const sinResponsable = records.filter(r =>
-            !r.responsable_accion || String(r.responsable_accion).trim() === ''
+            (!r.responsable_accion || String(r.responsable_accion).trim() === '') &&
+            (!r.responsable_proceso || String(r.responsable_proceso).trim() === '')
         );
         if (sinResponsable.length > 0) {
             alertas.push({

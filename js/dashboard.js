@@ -357,31 +357,38 @@ class Dashboard {
         data.forEach((item, idx) => {
             const estadoClass = this.getEstadoClass(item.estado);
             const criticidadClass = this.getCriticidadClass(item.criticidad);
-            
+            const desc = item.descripcion || '';
+            const descShort = desc.length > 45 ? desc.substring(0, 45) + '...' : desc;
+            const tipoAccion = item.tipo_accion || '';
+
             const row = document.createElement('tr');
             row.style.cursor = 'pointer';
             row.innerHTML = `
-                <td><strong>${this.escape(item.codigo)}</strong></td>
                 <td>${this.escape(item.auditoria)}</td>
-                <td>${this.formatDate(item.fecha_deteccion)}</td>
-                <td>${this.escape(item.proceso_display || item.proceso).substring(0, 30)}...</td>
+                <td>${this.escape(item.subproceso || '')}</td>
                 <td><span class="${criticidadClass}">${this.escape(item.criticidad)}</span></td>
-                <td>${this.escape(item.descripcion).substring(0, 40)}...</td>
-                <td>${this.escape(item.responsable_proceso)}</td>
+                <td title="${this.escape(desc)}">${this.escape(descShort)}</td>
+                <td>${this.escape(item.responsable_proceso || item.responsable_accion || '')}</td>
+                <td>
+                    <select class="form-select form-select-sm tipo-accion-select" data-index="${idx}" onchange="dashboard.onTipoAccionChange(${idx}, this.value)">
+                        <option value="" ${!tipoAccion ? 'selected' : ''}>-- Seleccionar --</option>
+                        <option value="Acción Correctiva" ${tipoAccion === 'Acción Correctiva' ? 'selected' : ''}>Acción Correctiva</option>
+                        <option value="Corrección" ${tipoAccion === 'Corrección' ? 'selected' : ''}>Corrección</option>
+                        <option value="Acción de Mejora" ${tipoAccion === 'Acción de Mejora' ? 'selected' : ''}>Acción de Mejora</option>
+                    </select>
+                </td>
                 <td>
                     <div style="min-width: 60px;">
                         <small>${item.avance_porcentaje}%</small>
                     </div>
                 </td>
                 <td><span class="${estadoClass}">${this.escape(item.estado)}</span></td>
-                <td>${this.escape(item.resultado_validacion)}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" data-index="${idx}" onclick="dashboard.showDetail(${idx})">
+                    <button class="btn btn-sm btn-outline-primary" data-index="${idx}" onclick="event.stopPropagation(); dashboard.showDetail(${idx})">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>
             `;
-            row.addEventListener('click', () => this.showDetail(idx));
             tbody.appendChild(row);
         });
 
@@ -400,6 +407,17 @@ class Dashboard {
             });
         } else {
             $('#tablaSeguimientoDetallado').DataTable().clear().rows.add($(tbody.querySelectorAll('tr'))).draw();
+        }
+    }
+
+    /**
+     * Manejar cambio de Tipo de Acción
+     */
+    onTipoAccionChange(idx, value) {
+        const record = this.currentData[idx];
+        if (record) {
+            record.tipo_accion = value;
+            console.log(`Tipo de Acción cambiado para ${record.codigo}: ${value}`);
         }
     }
 
@@ -579,135 +597,297 @@ class Dashboard {
     }
 
     /**
-     * Mostrar detalle de hallazgo
+     * Mostrar detalle de hallazgo - Diseño profesional
      */
     showDetail(index) {
         const record = this.currentData[index];
         if (!record) return;
 
         const offcanvas = new bootstrap.Offcanvas(document.getElementById('panelDetalleHallazgo'));
-        
+        const origenBadge = record.origen === 'SIG'
+            ? '<span class="badge bg-primary">SIG</span>'
+            : '<span class="badge bg-secondary">Aseguramiento</span>';
+
+        // Estado con color
+        const estadoColor = {
+            'Abierto': '#0d47a1',
+            'En ejecución': '#e65100',
+            'Cerrado': '#1b5e20',
+            'Vencido': '#b71c1c'
+        }[record.estado] || '#6c757d';
+
+        // Semáforo
+        const semaforoColor = {
+            'Vencido': '#dc3545',
+            'Próximo a vencer': '#ffc107',
+            'En término': '#28a745'
+        }[record.semaforo] || '#6c757d';
+
+        // Línea de tiempo
+        const timeline = this.buildTimeline(record);
+
+        // Gestión de la acción según tipo
+        const gestionAccion = this.buildGestionAccion(record, index);
+
         let html = `
-            <div class="detail-section">
-                <div class="detail-label">Código Hallazgo</div>
-                <div class="detail-value">${this.escape(record.codigo)}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Auditoría</div>
-                <div class="detail-value">${this.escape(record.auditoria)}</div>
-                <div class="detail-label mt-2">Origen</div>
-                <div class="detail-value"><span class="badge bg-info">${this.escape(record.origen)}</span></div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Proceso / Subproceso</div>
-                <div class="detail-value">${this.escape(record.proceso_display || record.proceso)}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Criticidad</div>
-                <div class="detail-value"><span class="${this.getCriticidadClass(record.criticidad)}">${this.escape(record.criticidad)}</span></div>
-                <div class="detail-label mt-2">Estado</div>
-                <div class="detail-value"><span class="${this.getEstadoClass(record.estado)}">${this.escape(record.estado)}</span></div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Descripción del Hallazgo</div>
-                <div class="detail-value">${this.escape(record.descripcion)}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Criterio Incumplido</div>
-                <div class="detail-value">${this.escape(record.criterio_incumplido)}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Riesgos Asociados</div>
-                <div class="detail-value">${this.escape(record.riesgos) || 'N/A'}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Causa Raíz</div>
-                <div class="detail-value">${this.escape(record.causa_raiz) || 'No especificada'}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Responsable del Proceso</div>
-                <div class="detail-value">${this.escape(record.responsable_proceso)}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Fechas Clave</div>
-                <div class="detail-value">
-                    <strong>Detección:</strong> ${this.formatDate(record.fecha_deteccion)}<br>
-                    <strong>Compromiso:</strong> ${this.formatDate(record.fecha_compromiso)}<br>
-                    <strong>Implementación:</strong> ${this.formatDate(record.fecha_implementacion)}<br>
-                    <strong>Cierre:</strong> ${this.formatDate(record.fecha_cierre)}
+            <!-- Header -->
+            <div class="detail-header-bar">
+                <div>
+                    <div class="detail-header-title">${this.escape(record.codigo)}</div>
+                    <div class="detail-header-subtitle">${origenBadge} · ${this.escape(record.origen)}</div>
                 </div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Línea de Tiempo - Semáforo</div>
-                <div class="detail-value">
-                    ${this.getSemaforoIcon(record.semaforo)} ${record.semaforo}
+            <!-- Estado + Avance -->
+            <div class="detail-status-bar" style="border-left: 4px solid ${semaforoColor}; background: ${semaforoColor}10;">
+                <span style="color: ${semaforoColor}; font-weight: 700; font-size: 1rem;">
+                    <i class="fas fa-circle" style="font-size: 0.6rem; vertical-align: middle;"></i> ${record.semaforo}
+                </span>
+            </div>
+            <div class="px-3 py-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-semibold">% Avance de la acción</small>
+                    <small class="fw-bold" style="color: ${estadoColor};">${record.avance_porcentaje}%</small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" style="width: ${record.avance_porcentaje}%; background-color: ${estadoColor};"></div>
                 </div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Avance de Acción</div>
-                <div class="detail-value">
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar" style="width: ${record.avance_porcentaje}%">
-                            ${record.avance_porcentaje}%
-                        </div>
+            <!-- IDENTIFICACIÓN -->
+            <div class="detail-section-group">
+                <div class="detail-section-title"><i class="fas fa-info-circle me-1"></i> IDENTIFICACIÓN</div>
+                <div class="detail-grid">
+                    <div class="detail-field">
+                        <div class="detail-field-label">AUDITORÍA</div>
+                        <div class="detail-field-value">${this.escape(record.auditoria)}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">FECHA DETECCIÓN</div>
+                        <div class="detail-field-value">${this.formatDate(record.fecha_deteccion)}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">PROCESO</div>
+                        <div class="detail-field-value">${this.escape(record.proceso || '')}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">SUBPROCESO</div>
+                        <div class="detail-field-value">${this.escape(record.subproceso || '')}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">CRITICIDAD</div>
+                        <div class="detail-field-value"><span class="detail-badge detail-badge-${record.criticidad === 'Alto' ? 'alto' : record.criticidad === 'Medio' ? 'medio' : 'bajo'}">${this.escape(record.criticidad)}</span></div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">ESTADO</div>
+                        <div class="detail-field-value" style="color: ${estadoColor}; font-weight: 600;">${this.escape(record.estado)}</div>
                     </div>
                 </div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Tipo de Acción</div>
-                <div class="detail-value">${this.escape(record.tipo_accion)}</div>
-                <div class="detail-label mt-2">Responsable de Acción</div>
-                <div class="detail-value">${this.escape(record.responsable_accion)}</div>
+            <!-- CRITERIO INCUMPLIDO -->
+            <div class="detail-section-group">
+                <div class="detail-section-title">CRITERIO INCUMPLIDO</div>
+                <div class="detail-text-box">${this.escape(record.criterio_incumplido) || '—'}</div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Acción Correctiva / Mejora</div>
-                <div class="detail-value">${this.escape(record.accion_correctiva)}</div>
+            <!-- DESCRIPCIÓN DEL HALLAZGO -->
+            <div class="detail-section-group">
+                <div class="detail-section-title">DESCRIPCIÓN DEL HALLAZGO</div>
+                <div class="detail-text-box">${this.escape(record.descripcion) || '—'}</div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Validación</div>
-                <div class="detail-value">
-                    <strong>Tipo:</strong> ${this.escape(record.tipo_validacion)}<br>
-                    <strong>Resultado:</strong> ${this.escape(record.resultado_validacion)}<br>
-                    <strong>Auditor:</strong> ${this.escape(record.auditor_valida)}
+            <!-- CAUSA RAÍZ -->
+            <div class="detail-section-group">
+                <div class="detail-section-title">CAUSA RAÍZ</div>
+                <div class="detail-text-box">${this.escape(record.causa_raiz) || '—'}</div>
+            </div>
+
+            <!-- RIESGOS ASOCIADOS -->
+            <div class="detail-section-group">
+                <div class="detail-section-title">RIESGOS ASOCIADOS</div>
+                <div class="detail-text-box">${this.escape(record.riesgos) || '—'}</div>
+            </div>
+
+            <!-- RESPONSABILIDAD -->
+            <div class="detail-section-group">
+                <div class="detail-section-title"><i class="fas fa-user me-1"></i> RESPONSABILIDAD</div>
+                <div class="detail-grid">
+                    <div class="detail-field">
+                        <div class="detail-field-label">RESPONSABLE DEL PROCESO</div>
+                        <div class="detail-field-value">${this.escape(record.responsable_proceso) || '—'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">RESPONSABLE DE LA ACCIÓN</div>
+                        <div class="detail-field-value">${this.escape(record.responsable_accion) || '—'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">ÁREA RESPONSABLE</div>
+                        <div class="detail-field-value">${this.escape(record.area_responsable) || '—'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">FECHA COMPROMISO</div>
+                        <div class="detail-field-value">${this.formatDate(record.fecha_compromiso)}</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Reincidencia</div>
-                <div class="detail-value">
-                    ${record.es_reincidente ? 
-                        '<span class="badge bg-warning text-dark">SÍ - Reincidente</span>' : 
-                        '<span class="badge bg-success">No</span>'}
+            <!-- GESTIÓN DE LA ACCIÓN -->
+            <div class="detail-section-group">
+                <div class="detail-section-title"><i class="fas fa-tools me-1"></i> GESTIÓN DE LA ACCIÓN</div>
+                ${gestionAccion}
+            </div>
+
+            <!-- VALIDACIÓN Y CIERRE -->
+            <div class="detail-section-group">
+                <div class="detail-section-title"><i class="fas fa-check-circle me-1"></i> VALIDACIÓN Y CIERRE</div>
+                <div class="detail-grid">
+                    <div class="detail-field">
+                        <div class="detail-field-label">TIPO DE VALIDACIÓN</div>
+                        <div class="detail-field-value">${this.escape(record.tipo_validacion) || '—'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">RESULTADO DE VALIDACIÓN</div>
+                        <div class="detail-field-value">${this.escape(record.resultado_validacion) || '—'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">REINCIDENCIA</div>
+                        <div class="detail-field-value">${record.es_reincidente ? '<span class="detail-badge detail-badge-alto">SÍ</span>' : '<span class="detail-badge detail-badge-bajo">No</span>'}</div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field-label">IMPACTO MITIGADO</div>
+                        <div class="detail-field-value">${this.escape(record.impacto_mitigado) || '—'}</div>
+                    </div>
+                </div>
+                <div class="detail-field mt-3">
+                    <div class="detail-field-label">OBSERVACIONES DE SEGUIMIENTO</div>
+                    <div class="detail-text-box">${this.escape(record.observaciones) || '—'}</div>
                 </div>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-label">Observaciones</div>
-                <div class="detail-value">${this.escape(record.observaciones) || 'Sin observaciones'}</div>
-            </div>
-
-            <div class="detail-section">
-                <div class="detail-label">Comentarios de Cierre</div>
-                <div class="detail-value">${this.escape(record.comentarios_cierre) || 'N/A'}</div>
+            <!-- LÍNEA DE TIEMPO -->
+            <div class="detail-section-group">
+                <div class="detail-section-title"><i class="fas fa-clock me-1"></i> LÍNEA DE TIEMPO</div>
+                ${timeline}
             </div>
         `;
 
         document.getElementById('contenidoDetalleHallazgo').innerHTML = html;
         offcanvas.show();
+    }
+
+    /**
+     * Construir gestión de la acción según tipo
+     */
+    buildGestionAccion(record, index) {
+        const tipo = record.tipo_accion || '';
+
+        if (tipo === 'Acción Correctiva') {
+            return `
+                <div class="detail-action-box">
+                    <div class="detail-grid">
+                        <div class="detail-field">
+                            <div class="detail-field-label">NÚMERO / DESCRIPCIÓN ACCIÓN CORRECTIVA</div>
+                            <div class="detail-field-value">${this.escape(record.accion_correctiva) || '—'}</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">% AVANCE</div>
+                            <div class="detail-field-value">${record.avance_porcentaje}%</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">TIPO DE VALIDACIÓN</div>
+                            <div class="detail-field-value">${this.escape(record.tipo_validacion) || '—'}</div>
+                        </div>
+                        <div class="detail-field">
+                            <div class="detail-field-label">RESULTADO DE VALIDACIÓN</div>
+                            <div class="detail-field-value">${this.escape(record.resultado_validacion) || '—'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (tipo === 'Corrección') {
+            return `
+                <div class="detail-action-box">
+                    <div class="detail-field">
+                        <div class="detail-field-label">DESCRIPCIÓN DE LA CORRECCIÓN</div>
+                        <textarea class="form-control form-control-sm" rows="3" placeholder="Describa la corrección realizada..."
+                            id="campoCorreccion_${index}"
+                            onchange="dashboard.saveCampoTexto(${index}, 'correccion_descripcion', this.value)">${this.escape(record.correccion_descripcion || '')}</textarea>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="dashboard.saveCampoTexto(${index}, 'correccion_descripcion', document.getElementById('campoCorreccion_${index}').value)">
+                        <i class="fas fa-save me-1"></i> Guardar
+                    </button>
+                </div>
+            `;
+        } else if (tipo === 'Acción de Mejora') {
+            return `
+                <div class="detail-action-box">
+                    <div class="detail-field">
+                        <div class="detail-field-label">DESCRIPCIÓN DE LA MEJORA</div>
+                        <textarea class="form-control form-control-sm" rows="3" placeholder="Describa la mejora implementada..."
+                            id="campoMejora_${index}"
+                            onchange="dashboard.saveCampoTexto(${index}, 'mejora_descripcion', this.value)">${this.escape(record.mejora_descripcion || '')}</textarea>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="dashboard.saveCampoTexto(${index}, 'mejora_descripcion', document.getElementById('campoMejora_${index}').value)">
+                        <i class="fas fa-save me-1"></i> Guardar
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="detail-action-box text-muted text-center py-3">
+                    <i class="fas fa-info-circle me-1"></i> Seleccione un Tipo de Acción en la tabla de Seguimiento Detallado
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * Construir línea de tiempo
+     */
+    buildTimeline(record) {
+        const fechas = [
+            { label: 'Detección', value: record.fecha_deteccion, color: '#28a745' },
+            { label: 'Último seguimiento', value: record.fecha_ultimo_seguimiento, color: '#6c757d' },
+            { label: 'Compromiso', value: record.fecha_compromiso, color: '#0d47a1' },
+            { label: 'Implementación real', value: record.fecha_implementacion, color: '#e65100' },
+            { label: 'Cierre oficial', value: record.fecha_cierre, color: '#1b5e20' }
+        ];
+
+        let html = '<div class="detail-timeline">';
+        fechas.forEach((f, i) => {
+            const fecha = this.formatDate(f.value);
+            const isLast = i === fechas.length - 1;
+            html += `
+                <div class="timeline-item ${isLast ? 'timeline-last' : ''}">
+                    <div class="timeline-dot" style="background-color: ${f.color};"></div>
+                    <div class="timeline-line"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-label">${f.label}</div>
+                        <div class="timeline-value">${fecha}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Guardar campo de texto (Corrección / Mejora)
+     */
+    saveCampoTexto(index, campo, valor) {
+        const record = this.currentData[index];
+        if (record) {
+            record[campo] = valor;
+            console.log(`Campo ${campo} guardado para ${record.codigo}: ${valor.substring(0, 50)}...`);
+
+            // Guardar en localStorage para persistencia
+            const storageKey = `dashboard_record_${record.codigo}`;
+            const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            saved[campo] = valor;
+            localStorage.setItem(storageKey, JSON.stringify(saved));
+        }
     }
 
     /**
