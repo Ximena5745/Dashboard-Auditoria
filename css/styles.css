@@ -476,7 +476,7 @@ body {
 
 /* ========== Offcanvas (Panel Lateral) ==========*/
 .offcanvas {
-    width: 480px;
+    width: 520px;
     box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
 }
 
@@ -494,6 +494,7 @@ body {
 .offcanvas-body {
     padding: 0;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .detail-section {
@@ -615,7 +616,7 @@ footer {
     }
 
     .offcanvas {
-        width: 100%;
+        width: 100% !important;
     }
 }
 
@@ -1015,15 +1016,190 @@ footer {
     font-style: italic;
 }
 
+/* ========== Tabla Seguimiento Detallado ==========*/
+#tablaSeguimientoDetallado {
+    width: 100%;
+}
+
+#tablaSeguimientoDetallado th,
+#tablaSeguimientoDetallado td {
+    vertical-align: middle;
+}
+
+#tablaSeguimientoDetallado th {
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+#tablaSeguimientoDetallado td {
+    font-size: 0.82rem;
+}
+
+#tablaSeguimientoDetallado td:nth-child(4) {
+    white-space: normal;
+    max-width: 200px;
+}
+
+/* Dropdown Tipo Acción */
+#tablaSeguimientoDetallado .tipo-accion-select {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.25rem;
+    min-width: 110px;
+}
+
+/* Conditional columns - show/hide via DataTable */
+#tablaSeguimientoDetallado .cond-col {
+    display: none;
+}
+
+#tablaSeguimientoDetallado.show-col-ac .cond-col-ac,
+#tablaSeguimientoDetallado.show-col-pct .cond-col-pct,
+#tablaSeguimientoDetallado.show-col-val .cond-col-val {
+    display: table-cell;
+}
+
+/* Column content styles */
+.cond-cell-input {
+    width: 100%;
+    font-size: 0.72rem;
+    padding: 0.15rem 0.3rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 3px;
+    background: white;
+}
+
+.cond-cell-input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 0.1rem rgba(0, 102, 204, 0.15);
+}
+
+.cond-cell-textarea {
+    width: 100%;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.3rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 3px;
+    resize: vertical;
+    min-height: 28px;
+    background: white;
+}
+
+.cond-cell-textarea:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 0.1rem rgba(0, 102, 204, 0.15);
+}
+
+.cond-cell-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: block;
+    margin-bottom: 1px;
+}
+
+/* Column header for conditional */
+.cond-col {
+    text-align: center !important;
+}
+
+#tablaSeguimientoDetallado th,
+#tablaSeguimientoDetallado td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#tablaSeguimientoDetallado th:nth-child(1) { width: 11%; }
+#tablaSeguimientoDetallado td:nth-child(1) { white-space: normal; font-size: 0.8rem; }
+#tablaSeguimientoDetallado th:nth-child(2) { width: 12%; }
+#tablaSeguimientoDetallado th:nth-child(3) { width: 9%; }
+#tablaSeguimientoDetallado th:nth-child(4) { width: 20%; }
+#tablaSeguimientoDetallado td:nth-child(4) { white-space: normal; }
+#tablaSeguimientoDetallado th:nth-child(5) { width: 11%; }
+#tablaSeguimientoDetallado th:nth-child(6) { width: 14%; }
+#tablaSeguimientoDetallado th:nth-child(7) { width: 8%; }
+#tablaSeguimientoDetallado th:nth-child(8) { width: 10%; }
+#tablaSeguimientoDetallado th:nth-child(9) { width: 5%; }
+
+#tablaSeguimientoDetallado .tipo-accion-select {
+    width: 100%;
+    min-width: 120px;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.3rem;
+    border-color: var(--gray-300);
+}
+
+#tablaSeguimientoDetallado .tipo-accion-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.15rem rgba(0, 102, 204, 0.2);
+}
+
+/* Conditional field indicators in table */
+.tipo-accion-badge {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+}
+
+.tipo-accion-badge.correctiva { background: #e3f2fd; color: #0d47a1; }
+.tipo-accion-badge.correccion { background: #fff3e0; color: #e65100; }
+.tipo-accion-badge.mejora { background: #e8f5e9; color: #1b5e20; }
+
+/* Inline conditional fields row */
+.inline-conditional-row {
+    background: var(--gray-50) !important;
+    border-left: 3px solid var(--color-primary);
+}
+
+.inline-conditional-row td {
+    padding: 0.75rem !important;
+    white-space: normal !important;
+}
+
+.inline-conditional-row .conditional-field {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.inline-conditional-row .conditional-field label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.2rem;
+    display: block;
+}
+
+.inline-conditional-row .conditional-field textarea {
+    font-size: 0.8rem;
+    border-color: var(--gray-300);
+    resize: vertical;
+}
+
+.inline-conditional-row .conditional-field textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.15rem rgba(0, 102, 204, 0.2);
+}
+
 /* ========== Detail Panel - Diseño Profesional ==========*/
 .detail-header-bar {
     background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
     color: white;
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.25rem;
+    word-break: break-word;
 }
 
 .detail-header-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     letter-spacing: 0.5px;
 }
@@ -1035,12 +1211,12 @@ footer {
 }
 
 .detail-status-bar {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 1rem;
     margin: 0;
 }
 
 .detail-section-group {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--gray-200);
 }
 
@@ -1049,7 +1225,7 @@ footer {
 }
 
 .detail-section-title {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: var(--color-primary);
     text-transform: uppercase;
@@ -1073,12 +1249,15 @@ footer {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 0.25rem;
+    word-break: break-word;
 }
 
 .detail-field-value {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--gray-800);
     font-weight: 500;
+    word-break: break-word;
+    line-height: 1.4;
 }
 
 .detail-text-box {
@@ -1086,10 +1265,11 @@ footer {
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     padding: 0.75rem;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--gray-700);
     line-height: 1.5;
     word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .detail-badge {
@@ -1110,6 +1290,7 @@ footer {
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     padding: 1rem;
+    word-break: break-word;
 }
 
 /* Timeline */
