@@ -530,14 +530,9 @@ class Dashboard {
         if (cells[8]) { cells[8].className = newCells[1] ? newCells[1].className : 'cond-col cond-col-pct'; cells[8].innerHTML = newCells[1] ? newCells[1].innerHTML : ''; }
         if (cells[9]) { cells[9].className = newCells[2] ? newCells[2].className : 'cond-col cond-col-val'; cells[9].innerHTML = newCells[2] ? newCells[2].innerHTML : ''; }
     }
-            });
-        } else {
-            $('#tablaSeguimientoDetallado').DataTable().clear().rows.add($(tbody.querySelectorAll('tr'))).draw();
-        }
-    }
 
     /**
-     * Construir celdas condicionales según tipo de acción
+     * Tabla: Top 10 Críticos
      */
     buildCondCells(idx, tipo, item) {
         if (!tipo) {
