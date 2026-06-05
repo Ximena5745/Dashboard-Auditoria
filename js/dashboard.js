@@ -110,27 +110,26 @@ class Dashboard {
     }
 
     /**
-     * Gráfico: Procesos (Bar Chart)
+     * Gráfico: Procesos (Bar Chart) - Ordenado mayor a menor, sin números en eje X, con valor en barra
      */
     updateChartProcesos(data) {
         const clusters = dataManager.getByCluster('proceso', data);
-        // Usar proceso_display para etiquetas más descriptivas
-        const processLabels = {};
-        data.forEach(record => {
-            const clusterKey = record.proceso || 'Sin especificar';
-            const displayKey = record.proceso_display || record.proceso || 'Sin especificar';
-            if (!processLabels[clusterKey]) processLabels[clusterKey] = displayKey;
-        });
 
-        const labels = Object.keys(clusters).slice(0, 10);
-        const displayLabels = labels.map(l => {
-            const display = processLabels[l] || l;
-            return display.length > 35 ? display.substring(0, 35) + '...' : display;
-        });
-        const values = labels.map(label => clusters[label].length);
-        
+        // Construir pares [label, count] y ordenar de mayor a menor
+        const pairs = Object.entries(clusters)
+            .map(([key, records]) => ({
+                key,
+                label: records[0].proceso_display || records[0].proceso || key,
+                count: records.length
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+        const labels = pairs.map(p => p.label.length > 35 ? p.label.substring(0, 35) + '...' : p.label);
+        const values = pairs.map(p => p.count);
+
         const ctx = document.getElementById('chartProcesos').getContext('2d');
-        
+
         if (this.charts.procesos) {
             this.charts.procesos.destroy();
         }
@@ -138,7 +137,7 @@ class Dashboard {
         this.charts.procesos = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: displayLabels,
+                labels: labels,
                 datasets: [{
                     label: 'Cantidad de Hallazgos',
                     data: values,
@@ -153,47 +152,75 @@ class Dashboard {
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: true,
+                layout: {
+                    padding: { right: 30 }
+                },
                 plugins: {
-                    legend: {
-                        display: true,
-                        labels: { font: { weight: 'bold' } }
-                    },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
                                 return `Hallazgos: ${context.parsed.x}`;
                             }
                         }
+                    },
+                    datalabels: {
+                        display: true,
+                        anchor: 'end',
+                        align: 'end',
+                        color: '#333',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: function(value) { return value; }
                     }
                 },
                 scales: {
                     x: {
                         beginAtZero: true,
-                        ticks: { stepSize: 1 },
-                        grid: { drawBorder: false }
+                        display: false,
+                        grid: { display: false }
                     },
                     y: {
-                        grid: { drawBorder: false }
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11, weight: '600' },
+                            color: '#374151'
+                        }
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'barValue',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    chart.data.datasets.forEach(function(dataset, datasetIndex) {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach(function(bar, index) {
+                            const value = dataset.data[index];
+                            ctx.fillStyle = '#333';
+                            ctx.font = 'bold 12px Segoe UI';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(value, bar.x + 5, bar.y);
+                        });
+                    });
+                }
+            }]
         });
     }
 
     /**
-     * Gráfico: Estados (Stacked Bar)
+     * Gráfico: Estado de Acciones (Stacked Bar por Proceso × Estado)
      */
     updateChartEstados(data) {
-        const clusters = dataManager.getByCluster('estado', data);
-        const estados = ['Abierto', 'En ejecución', 'Cerrado', 'Vencido'];
-        const values = estados.map(estado => (clusters[estado] || []).length);
-        
         const ctx = document.getElementById('chartEstados').getContext('2d');
-        
+
         if (this.charts.estados) {
             this.charts.estados.destroy();
         }
 
+        // Agrupar por proceso y contar estados
+        const procesosMap = {};
+        const estados = ['Abierto', 'En ejecución', 'Cerrado', 'Vencido'];
         const colors = {
             'Abierto': '#0d47a1',
             'En ejecución': '#e65100',
@@ -201,13 +228,39 @@ class Dashboard {
             'Vencido': '#b71c1c'
         };
 
+        data.forEach(record => {
+            const proc = record.proceso_display || record.proceso || 'Sin especificar';
+            const procShort = proc.length > 25 ? proc.substring(0, 25) + '...' : proc;
+            if (!procesosMap[procShort]) {
+                procesosMap[procShort] = { 'Abierto': 0, 'En ejecución': 0, 'Cerrado': 0, 'Vencido': 0 };
+            }
+            const estado = record.estado || 'Abierto';
+            if (procesosMap[procShort][estado] !== undefined) {
+                procesosMap[procShort][estado]++;
+            } else {
+                procesosMap[procShort]['Abierto']++;
+            }
+        });
+
+        // Ordenar procesos por total descendente
+        const sortedProcs = Object.entries(procesosMap)
+            .map(([name, counts]) => ({
+                name,
+                total: Object.values(counts).reduce((a, b) => a + b, 0),
+                counts
+            }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10);
+
+        const labels = sortedProcs.map(p => p.name);
+
         this.charts.estados = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Estados'],
-                datasets: estados.map((estado, idx) => ({
+                labels: labels,
+                datasets: estados.map(estado => ({
                     label: estado,
-                    data: [values[idx]],
+                    data: sortedProcs.map(p => p.counts[estado]),
                     backgroundColor: colors[estado],
                     borderColor: colors[estado],
                     borderWidth: 1
@@ -217,20 +270,41 @@ class Dashboard {
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: true,
+                layout: {
+                    padding: { right: 10 }
+                },
                 scales: {
                     x: {
                         stacked: true,
                         beginAtZero: true,
-                        ticks: { stepSize: 1 }
+                        ticks: { stepSize: 1, font: { size: 10 } },
+                        grid: { display: false }
                     },
                     y: {
-                        stacked: true
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 10, weight: '600' },
+                            color: '#374151'
+                        }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { font: { weight: 'bold' }, padding: 15 }
+                        labels: {
+                            font: { weight: 'bold', size: 10 },
+                            padding: 10,
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.x}`;
+                            }
+                        }
                     }
                 }
             }
@@ -338,17 +412,23 @@ class Dashboard {
 
         top10.forEach((item, idx) => {
             const criticidadClass = this.getCriticidadClass(item.criticidad);
+            const desc = item.descripcion || '';
+            const descShort = desc.length > 60 ? desc.substring(0, 60) + '...' : desc;
+            const origenBadge = item.origen === 'SIG'
+                ? '<span class="badge bg-primary">SIG</span>'
+                : '<span class="badge bg-secondary">Aseguramiento</span>';
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="text-center fw-bold">${idx + 1}</td>
-                <td><strong>${this.escape(item.codigo)}</strong></td>
-                <td>${this.escape(item.proceso_display || item.proceso).substring(0, 25)}...</td>
+                <td>${this.escape(item.subproceso || item.proceso_display || item.proceso || '')}</td>
+                <td title="${this.escape(desc)}">${this.escape(descShort)}</td>
                 <td><span class="${criticidadClass}">${this.escape(item.criticidad)}</span></td>
+                <td class="text-center">${origenBadge}</td>
                 <td class="text-center">
                     <span class="badge bg-danger">${Math.max(0, item.dias_vencidos)} días</span>
                 </td>
                 <td class="text-center">${item.avance_porcentaje}%</td>
-                <td class="text-center"><strong>${Math.round(item.score_prioridad)}</strong></td>
             `;
             tbody.appendChild(row);
         });

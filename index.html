@@ -67,7 +67,15 @@
                     </select>
                 </div>
 
-                <!-- Filtro 2: Auditoría -->
+                <!-- Filtro 2: Subproceso -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Subproceso</label>
+                    <select id="filterSubproceso" class="form-select form-select-sm">
+                        <option value="">-- Todos los Subprocesos --</option>
+                    </select>
+                </div>
+
+                <!-- Filtro 3: Auditoría -->
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label small fw-semibold">Auditoría</label>
                     <select id="filterAuditoria" class="form-select form-select-sm">
@@ -75,23 +83,10 @@
                     </select>
                 </div>
 
-                <!-- Filtro 3: Estado -->
-                <div class="col-lg-3 col-md-6">
-                    <label class="form-label small fw-semibold">Estado</label>
-                    <select id="filterEstado" class="form-select form-select-sm">
-                        <option value="">-- Todos los Estados --</option>
-                        <option value="Abierto">Abierto</option>
-                        <option value="En ejecución">En ejecución</option>
-                        <option value="Cerrado">Cerrado</option>
-                        <option value="Vencido">Vencido</option>
-                    </select>
-                </div>
-
-                <!-- Buscador Global -->
-                <div class="col-lg-3 col-md-6 d-flex gap-2">
-                    <input type="text" id="searchGlobal" class="form-control form-control-sm" placeholder="Buscar en todos los campos...">
+                <!-- Botón Limpiar -->
+                <div class="col-lg-3 col-md-6 d-flex align-items-end">
                     <button id="btnLimpiarFiltros" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-times me-1"></i> Limpiar
+                        <i class="fas fa-times me-1"></i> Limpiar Filtros
                     </button>
                 </div>
             </div>
@@ -286,23 +281,23 @@
                             <h6 class="mb-0">Top 10 Hallazgos Críticos para Atención Inmediata</h6>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="tablaTop10" class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th style="width: 5%">#</th>
-                                            <th>Código</th>
-                                            <th>Proceso</th>
-                                            <th>Criticidad</th>
-                                            <th>Días Vencidos</th>
-                                            <th>% Avance</th>
-                                            <th>Score Prioridad</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbodyTop10">
-                                    </tbody>
-                                </table>
-                            </div>
+                    <div class="table-responsive">
+                        <table id="tablaTop10" class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th>Subproceso</th>
+                                    <th>Hallazgo</th>
+                                    <th>Criticidad</th>
+                                    <th>Origen</th>
+                                    <th>Días Vencidos</th>
+                                    <th>% Avance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTop10">
+                            </tbody>
+                        </table>
+                    </div>
                         </div>
                     </div>
                 </div>

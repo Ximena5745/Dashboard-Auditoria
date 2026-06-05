@@ -1,16 +1,15 @@
 /**
- * FILTERS - Gestión de filtros globales y búsqueda
+ * FILTERS - Gestión de filtros globales
+ * Filtros: Proceso, Subproceso, Auditoría
  */
 
 class FilterManager {
     constructor() {
         this.currentFilters = {
             proceso: '',
-            auditoria: '',
-            estado: ''
+            subproceso: '',
+            auditoria: ''
         };
-        
-        this.searchKeyword = '';
         this.storageKey = 'dashboard_filters';
     }
 
@@ -19,7 +18,7 @@ class FilterManager {
      */
     initFilters() {
         this.attachEventListeners();
-        this.loadFilteredData();
+        this.loadFilters();
         this.populateFilterOptions();
         this.applyFilters();
         console.log('✓ Filtros inicializados');
@@ -29,9 +28,16 @@ class FilterManager {
      * Adjuntar event listeners
      */
     attachEventListeners() {
-        // Filtros
         document.getElementById('filterProceso').addEventListener('change', (e) => {
             this.currentFilters.proceso = e.target.value;
+            this.updateSubprocesoOptions();
+            this.currentFilters.subproceso = '';
+            document.getElementById('filterSubproceso').value = '';
+            this.applyFilters();
+        });
+
+        document.getElementById('filterSubproceso').addEventListener('change', (e) => {
+            this.currentFilters.subproceso = e.target.value;
             this.applyFilters();
         });
 
@@ -40,18 +46,6 @@ class FilterManager {
             this.applyFilters();
         });
 
-        document.getElementById('filterEstado').addEventListener('change', (e) => {
-            this.currentFilters.estado = e.target.value;
-            this.applyFilters();
-        });
-
-        // Búsqueda global
-        document.getElementById('searchGlobal').addEventListener('input', (e) => {
-            this.searchKeyword = e.target.value;
-            this.applyFilters();
-        });
-
-        // Botón limpiar filtros
         document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
             this.clearFilters();
         });
@@ -61,7 +55,7 @@ class FilterManager {
      * Llenar opciones de filtros
      */
     populateFilterOptions() {
-        // Procesos (usar proceso_display para mostrar valores más descriptivos)
+        // Procesos únicos
         const procesos = dataManager.getUniqueProcesos();
         const selectProceso = document.getElementById('filterProceso');
         procesos.forEach(proceso => {
@@ -70,6 +64,9 @@ class FilterManager {
             option.textContent = proceso;
             selectProceso.appendChild(option);
         });
+
+        // Subprocesos (todos inicialmente)
+        this.updateSubprocesoOptions();
 
         // Auditorías
         const auditorias = dataManager.getAuditorias();
@@ -83,14 +80,26 @@ class FilterManager {
     }
 
     /**
+     * Actualizar opciones de subproceso según proceso seleccionado
+     */
+    updateSubprocesoOptions() {
+        const selectSubproceso = document.getElementById('filterSubproceso');
+        selectSubproceso.innerHTML = '<option value="">-- Todos los Subprocesos --</option>';
+
+        const subprocesos = dataManager.getSubprocesosFiltrados(this.currentFilters.proceso);
+        subprocesos.forEach(subproceso => {
+            const option = document.createElement('option');
+            option.value = subproceso;
+            option.textContent = subproceso;
+            selectSubproceso.appendChild(option);
+        });
+    }
+
+    /**
      * Aplicar filtros
      */
     applyFilters() {
         let filteredData = dataManager.filterData(this.currentFilters);
-
-        if (this.searchKeyword) {
-            filteredData = dataManager.globalSearch(this.searchKeyword, filteredData);
-        }
 
         // Guardar en localStorage
         this.saveFilters();
@@ -107,18 +116,15 @@ class FilterManager {
     clearFilters() {
         this.currentFilters = {
             proceso: '',
-            auditoria: '',
-            estado: ''
+            subproceso: '',
+            auditoria: ''
         };
 
-        this.searchKeyword = '';
-
-        // Resetear UI
         document.getElementById('filterProceso').value = '';
+        document.getElementById('filterSubproceso').value = '';
         document.getElementById('filterAuditoria').value = '';
-        document.getElementById('filterEstado').value = '';
-        document.getElementById('searchGlobal').value = '';
 
+        this.updateSubprocesoOptions();
         this.applyFilters();
     }
 
@@ -128,7 +134,6 @@ class FilterManager {
     saveFilters() {
         const filters = {
             ...this.currentFilters,
-            search: this.searchKeyword,
             timestamp: new Date().toISOString()
         };
         localStorage.setItem(this.storageKey, JSON.stringify(filters));
@@ -137,22 +142,19 @@ class FilterManager {
     /**
      * Cargar filtros desde localStorage
      */
-    loadFilteredData() {
+    loadFilters() {
         const stored = localStorage.getItem(this.storageKey);
         if (stored) {
             try {
                 const filters = JSON.parse(stored);
-                // Restaurar filtros (solo si no fueron resetados)
                 if (filters.proceso) this.currentFilters.proceso = filters.proceso;
+                if (filters.subproceso) this.currentFilters.subproceso = filters.subproceso;
                 if (filters.auditoria) this.currentFilters.auditoria = filters.auditoria;
-                if (filters.estado) this.currentFilters.estado = filters.estado;
-                if (filters.search) this.searchKeyword = filters.search;
 
-                // Restaurar en UI
-                if (filters.proceso) document.getElementById('filterProceso').value = filters.proceso;
-                if (filters.auditoria) document.getElementById('filterAuditoria').value = filters.auditoria;
-                if (filters.estado) document.getElementById('filterEstado').value = filters.estado;
-                if (filters.search) document.getElementById('searchGlobal').value = filters.search;
+                document.getElementById('filterProceso').value = this.currentFilters.proceso;
+                this.updateSubprocesoOptions();
+                document.getElementById('filterSubproceso').value = this.currentFilters.subproceso;
+                document.getElementById('filterAuditoria').value = this.currentFilters.auditoria;
 
                 console.log('✓ Filtros restaurados desde localStorage');
             } catch (error) {
@@ -166,31 +168,6 @@ class FilterManager {
      */
     getCurrentFilters() {
         return { ...this.currentFilters };
-    }
-
-    /**
-     * Obtener búsqueda actual
-     */
-    getSearchKeyword() {
-        return this.searchKeyword;
-    }
-
-    /**
-     * Establecer filtro programáticamente
-     */
-    setFilter(filterName, value) {
-        if (this.currentFilters.hasOwnProperty(filterName)) {
-            this.currentFilters[filterName] = value;
-            
-            // Actualizar UI
-            const selectId = `filter${filterName.charAt(0).toUpperCase() + filterName.slice(1)}`;
-            const select = document.getElementById(selectId);
-            if (select) {
-                select.value = value;
-            }
-            
-            this.applyFilters();
-        }
     }
 }
 

@@ -401,6 +401,22 @@ class DataManager {
     }
 
     /**
+     * Obtener subprocesos filtrados por proceso
+     */
+    getSubprocesosFiltrados(proceso = '') {
+        const subprocesos = new Set();
+        this.consolidatedData.forEach(record => {
+            if (proceso) {
+                const proc = record.proceso_display || record.proceso;
+                if (proc !== proceso) return;
+            }
+            const sub = record.subproceso;
+            if (sub && String(sub).trim()) subprocesos.add(String(sub).trim());
+        });
+        return Array.from(subprocesos).sort();
+    }
+
+    /**
      * Obtener auditorías únicas
      */
     getAuditorias() {
@@ -412,7 +428,7 @@ class DataManager {
     }
 
     /**
-     * Filtrar datos según criterios
+     * Filtrar datos según criterios (Proceso, Subproceso, Auditoría)
      */
     filterData(filters) {
         return this.consolidatedData.filter(record => {
@@ -420,10 +436,11 @@ class DataManager {
                 const proc = record.proceso_display || record.proceso;
                 if (proc !== filters.proceso) return false;
             }
+            if (filters.subproceso) {
+                const sub = String(record.subproceso || '').trim();
+                if (sub !== filters.subproceso) return false;
+            }
             if (filters.auditoria && record.auditoria !== filters.auditoria) return false;
-            if (filters.criticidad && record.criticidad !== filters.criticidad) return false;
-            if (filters.estado && record.estado !== filters.estado) return false;
-            if (filters.origen && record.origen !== filters.origen) return false;
             return true;
         });
     }
@@ -504,11 +521,18 @@ class DataManager {
 
     /**
      * Obtener top N hallazgos críticos
+     * Prioridad: SIG primero, luego Aseguramiento, luego por score
      */
     getTopCritical(n = 10, data = null) {
         const records = data || this.consolidatedData;
         return records
-            .sort((a, b) => b.score_prioridad - a.score_prioridad)
+            .sort((a, b) => {
+                // SIG tiene prioridad sobre Aseguramiento
+                if (a.origen === 'SIG' && b.origen !== 'SIG') return -1;
+                if (a.origen !== 'SIG' && b.origen === 'SIG') return 1;
+                // Luego por score de prioridad
+                return b.score_prioridad - a.score_prioridad;
+            })
             .slice(0, n);
     }
 

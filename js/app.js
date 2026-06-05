@@ -74,15 +74,6 @@ class Application {
             }
         });
 
-        // Teclas de acceso rápido
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+F: Enfoca en búsqueda
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                document.getElementById('searchGlobal').focus();
-            }
-        });
-
         // Detector de cambios en ventana
         window.addEventListener('beforeunload', () => {
             filterManager.saveFilters();
