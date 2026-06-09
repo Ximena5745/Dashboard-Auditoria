@@ -9,6 +9,7 @@
  *  3. Copia "Project URL" y "anon / public" key
  */
 window.APP_CONFIG = {
-    SUPABASE_URL: 'https://TU_PROYECTO.supabase.co',
-    SUPABASE_ANON_KEY: 'TU_ANON_KEY_PUBLICA'
+    SUPABASE_URL: 'https://rzkibazerymcybyjfpmg.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6a2liYXplcnltY3lieWpmcG1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NjQ3MzgsImV4cCI6MjA5NjU0MDczOH0.diTiBTfk8EagbYzXHJuVYx8hTMQi1yTapktGhwWcT0Q'
 };
+

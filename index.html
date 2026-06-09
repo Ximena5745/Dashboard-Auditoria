@@ -493,9 +493,9 @@
     <!-- Supabase JS (cliente para diligenciamiento online) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Configuración de credenciales (no incluida en el repositorio) -->
-    <!-- Crea js/config.js copiando js/config.example.js con tus credenciales reales -->
-    <script src="js/config.js" onerror="console.warn('config.js no encontrado — diligenciamiento en modo offline')"></script>
+    <!-- Configuración Supabase: example.js se despliega en GitHub Pages; config.js local lo sobreescribe -->
+    <script src="js/config.example.js"></script>
+    <script src="js/config.js" onerror="void 0"></script>
 
     <!-- Custom Scripts -->
     <script src="js/dataManager.js"></script>
