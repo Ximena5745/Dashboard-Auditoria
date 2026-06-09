@@ -18,8 +18,8 @@ class FilterManager {
      */
     initFilters() {
         this.attachEventListeners();
-        this.loadFilters();
         this.populateFilterOptions();
+        this.loadFilters();
         this.applyFilters();
         console.log('✓ Filtros inicializados');
     }
@@ -55,9 +55,10 @@ class FilterManager {
      * Llenar opciones de filtros
      */
     populateFilterOptions() {
-        // Procesos únicos
+        // Procesos únicos (solo columna Proceso, sin subproceso concatenado)
         const procesos = dataManager.getUniqueProcesos();
         const selectProceso = document.getElementById('filterProceso');
+        selectProceso.innerHTML = '<option value="">-- Todos los Procesos --</option>';
         procesos.forEach(proceso => {
             const option = document.createElement('option');
             option.value = proceso;
@@ -71,6 +72,7 @@ class FilterManager {
         // Auditorías
         const auditorias = dataManager.getAuditorias();
         const selectAuditoria = document.getElementById('filterAuditoria');
+        selectAuditoria.innerHTML = '<option value="">-- Todas las Auditorías --</option>';
         auditorias.forEach(auditoria => {
             const option = document.createElement('option');
             option.value = auditoria;
@@ -144,22 +146,40 @@ class FilterManager {
      */
     loadFilters() {
         const stored = localStorage.getItem(this.storageKey);
-        if (stored) {
-            try {
-                const filters = JSON.parse(stored);
-                if (filters.proceso) this.currentFilters.proceso = filters.proceso;
-                if (filters.subproceso) this.currentFilters.subproceso = filters.subproceso;
-                if (filters.auditoria) this.currentFilters.auditoria = filters.auditoria;
+        if (!stored) return;
 
-                document.getElementById('filterProceso').value = this.currentFilters.proceso;
-                this.updateSubprocesoOptions();
-                document.getElementById('filterSubproceso').value = this.currentFilters.subproceso;
-                document.getElementById('filterAuditoria').value = this.currentFilters.auditoria;
+        try {
+            const filters = JSON.parse(stored);
+            const procesosValidos = new Set(dataManager.getUniqueProcesos());
+            const auditoriasValidas = new Set(dataManager.getAuditorias());
 
-                console.log('✓ Filtros restaurados desde localStorage');
-            } catch (error) {
-                console.warn('⚠ Error al restaurar filtros:', error);
+            if (filters.proceso && procesosValidos.has(filters.proceso)) {
+                this.currentFilters.proceso = filters.proceso;
+            } else if (filters.proceso) {
+                console.warn('⚠ Filtro de proceso obsoleto descartado:', filters.proceso);
             }
+
+            if (filters.auditoria && auditoriasValidas.has(filters.auditoria)) {
+                this.currentFilters.auditoria = filters.auditoria;
+            }
+
+            document.getElementById('filterProceso').value = this.currentFilters.proceso;
+            this.updateSubprocesoOptions();
+
+            const subprocesosValidos = new Set(
+                dataManager.getSubprocesosFiltrados(this.currentFilters.proceso)
+            );
+            if (filters.subproceso && subprocesosValidos.has(filters.subproceso)) {
+                this.currentFilters.subproceso = filters.subproceso;
+            }
+            document.getElementById('filterSubproceso').value = this.currentFilters.subproceso;
+            document.getElementById('filterAuditoria').value = this.currentFilters.auditoria;
+
+            if (this.currentFilters.proceso || this.currentFilters.subproceso || this.currentFilters.auditoria) {
+                console.log('✓ Filtros restaurados desde localStorage');
+            }
+        } catch (error) {
+            console.warn('⚠ Error al restaurar filtros:', error);
         }
     }
 

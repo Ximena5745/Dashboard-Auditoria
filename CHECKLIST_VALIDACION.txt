@@ -121,9 +121,9 @@ INTERFACE GENERAL
 ═══════════════════════════════════════════════════════════════════════════════
 
 Origen de Datos:
-[✓] Hoja 1: Base Hallazgos SIG           - 204 registros
-[✓] Hoja 2: Base Hallazgos Aseguramiento - 205 registros
-[✓] Total consolidado:                    - 409 registros
+[✓] Hoja 1: Base Hallazgos SIG           - 12 registros con datos (plantilla 204 filas)
+[✓] Hoja 2: Base Hallazgos Aseguramiento - 24 registros con datos (plantilla 205 filas)
+[✓] Total consolidado:                    - 36 registros
 
 Mapeo de Columnas:
 [✓] Código Hallazgo                ✓ Mapeado
@@ -299,7 +299,7 @@ Exportaciones:
 
 Resumen:
   • ✅ 100% de funcionalidades implementadas
-  • ✅ 409 registros consolidados
+  • ✅ 36 registros consolidados (solo filas con datos en columnas clave)
   • ✅ Interfaz responsive y profesional
   • ✅ Sin dependencias externas de servidor
   • ✅ Listo para producción

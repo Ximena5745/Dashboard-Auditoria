@@ -6,7 +6,8 @@
 Gestor interactivo de hallazgos de auditoría. Consolida datos de SIG y 
 Aseguramiento en un único dashboard análitico.
 
-📊 DATOS: 409 registros (204 SIG + 205 Aseguramiento)
+📊 DATOS: 36 registros con información (12 SIG + 24 Aseguramiento)
+     La matriz Excel reserva ~204 filas por hoja; las filas vacías no se cargan.
 
 ════════════════════════════════════════════════════════════════════════════════
 🚀 CÓMO INICIAR
@@ -105,10 +106,10 @@ Dashboard_Auditoria/
 Ubicación: /data/Matriz_Seguimiento_Hallazgos.xlsx
 
 Hojas consolidadas:
-  1. Base Hallazgos SIG               (204 registros)
-  2. Base Hallazgos Aseguramiento    (205 registros)
+  1. Base Hallazgos SIG               (12 registros con datos / 204 filas plantilla)
+  2. Base Hallazgos Aseguramiento    (24 registros con datos / 205 filas plantilla)
   ────────────────────────────────────────────
-  Total consolidado:                  (409 registros)
+  Total consolidado en dashboard:     (36 registros)
 
 Columnas principales:
   • Código Hallazgo

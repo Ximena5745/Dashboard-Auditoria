@@ -16,81 +16,128 @@ class ExportManager {
     }
 
     /**
-     * Exportar a Excel
+     * Obtener dataset listo para exportar: recarga Supabase y fusiona sobre todos los registros.
+     * Respeta filtros activos si los hay.
      */
-    exportToExcel() {
+    async getExportData() {
+        await diligenciaService.loadAll();
+        diligenciaService.mergeIntoRecords(dataManager.consolidatedData);
+        dataManager.consolidatedData.forEach(r => dataManager.refreshRecordDerivedFields(r));
+
+        const filters = filterManager.getCurrentFilters();
+        const hasFilters = filters.proceso || filters.subproceso || filters.auditoria;
+        return hasFilters ? dataManager.filterData(filters) : dataManager.getData();
+    }
+
+    /**
+     * Mapear un registro a fila Excel con campos base + diligenciamiento (Supabase)
+     */
+    buildExcelRow(record) {
+        const diligencia = diligenciaService.get(record.codigo);
+        const updatedAt = diligencia?.updated_at
+            ? new Date(diligencia.updated_at).toLocaleString('es-ES')
+            : '';
+
+        return {
+            'Código Hallazgo': record.codigo,
+            'Auditoría': record.auditoria,
+            'Proceso': record.proceso || '',
+            'Subproceso': record.subproceso || '',
+            'Criticidad': record.criticidad,
+            'Estado': record.estado,
+            'Descripción del Hallazgo': record.descripcion,
+            'Responsable del Proceso': record.responsable_proceso || record.responsable_accion || '',
+            'Tipo de Acción': record.tipo_accion || '',
+            'Acción Correctiva': record.accion_correctiva || '',
+            'Descripción Corrección': record.correccion_descripcion || '',
+            'Descripción Mejora': record.mejora_descripcion || '',
+            '% Avance': record.avance_porcentaje ?? 0,
+            'Tipo de Validación': record.tipo_validacion || '',
+            'Resultado de Validación': record.resultado_validacion || '',
+            'Fecha de Detección': this.formatDateForExport(record.fecha_deteccion),
+            'Fecha Compromiso': this.formatDateForExport(record.fecha_compromiso),
+            'Fecha Cierre': this.formatDateForExport(record.fecha_cierre),
+            'Reincidencia': record.es_reincidente ? 'Sí' : 'No',
+            'Días Vencidos': record.dias_vencidos ?? 0,
+            'Origen': record.origen || '',
+            'Última actualización diligenciamiento': updatedAt
+        };
+    }
+
+    /**
+     * Ajustar anchos de columnas en una hoja
+     */
+    applyColumnWidths(ws, widths) {
+        ws['!cols'] = widths;
+    }
+
+    /**
+     * Exportar a Excel con actualizaciones de diligenciamiento (Supabase).
+     * Genera dos hojas: SIG y Aseguramiento, más una hoja consolidada.
+     */
+    async exportToExcel() {
+        const btn = document.getElementById('btnExportExcel');
+        const originalHtml = btn ? btn.innerHTML : '';
+
         try {
-            const data = dashboard.currentData;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exportando...';
+            }
+
+            const data = await this.getExportData();
             if (data.length === 0) {
                 alert('No hay datos para exportar');
                 return;
             }
 
-            // Preparar datos para Excel
-            const exportData = data.map(record => ({
-                'Código': record.codigo,
-                'Auditoría': record.auditoria,
-                'Origen': record.origen,
-                'Proceso': record.proceso_display || record.proceso,
-                'Criticidad': record.criticidad,
-                'Estado': record.estado,
-                'Descripción': record.descripcion,
-                'Responsable': record.responsable_proceso,
-                'Tipo Acción': record.tipo_accion,
-                'Avance %': record.avance_porcentaje,
-                'Fecha Detección': this.formatDateForExport(record.fecha_deteccion),
-                'Fecha Compromiso': this.formatDateForExport(record.fecha_compromiso),
-                'Fecha Cierre': this.formatDateForExport(record.fecha_cierre),
-                'Validación': record.resultado_validacion,
-                'Reincidente': record.es_reincidente ? 'Sí' : 'No',
-                'Días Vencidos': record.dias_vencidos
-            }));
+            const sigData = data.filter(r => r.origen === 'SIG').map(r => this.buildExcelRow(r));
+            const asegData = data.filter(r => r.origen === 'Aseguramiento').map(r => this.buildExcelRow(r));
+            const allData = data.map(r => this.buildExcelRow(r));
 
-            // Crear workbook
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Hallazgos');
-
-            // Ajustar anchos de columna
             const colWidths = [
-                { wch: 15 }, // Código
-                { wch: 20 }, // Auditoría
-                { wch: 15 }, // Origen
-                { wch: 25 }, // Proceso
-                { wch: 12 }, // Criticidad
-                { wch: 15 }, // Estado
-                { wch: 30 }, // Descripción
-                { wch: 20 }, // Responsable
-                { wch: 18 }, // Tipo Acción
-                { wch: 10 }, // Avance
-                { wch: 15 }, // Fecha Detección
-                { wch: 15 }, // Fecha Compromiso
-                { wch: 15 }, // Fecha Cierre
-                { wch: 15 }, // Validación
-                { wch: 12 }, // Reincidente
-                { wch: 15 }  // Días Vencidos
+                { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 22 }, { wch: 12 },
+                { wch: 14 }, { wch: 40 }, { wch: 22 }, { wch: 20 }, { wch: 35 },
+                { wch: 35 }, { wch: 35 }, { wch: 10 }, { wch: 20 }, { wch: 22 },
+                { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 14 },
+                { wch: 16 }, { wch: 28 }
             ];
-            ws['!cols'] = colWidths;
 
-            // Formato de encabezado
-            const range = XLSX.utils.decode_range(ws['!ref']);
-            for (let C = range.s.c; C <= range.e.c; ++C) {
-                const address = XLSX.utils.encode_col(C) + '1';
-                if (!ws[address]) continue;
-                ws[address].s = {
-                    font: { bold: true, color: { rgb: 'FFFFFF' } },
-                    fill: { fgColor: { rgb: '0066CC' } },
-                    alignment: { horizontal: 'center', vertical: 'center' }
-                };
-            }
+            const wb = XLSX.utils.book_new();
 
-            // Descargar
+            const wsSig = XLSX.utils.json_to_sheet(sigData);
+            this.applyColumnWidths(wsSig, colWidths);
+            XLSX.utils.book_append_sheet(wb, wsSig, 'Base Hallazgos SIG');
+
+            const wsAseg = XLSX.utils.json_to_sheet(asegData);
+            this.applyColumnWidths(wsAseg, colWidths);
+            XLSX.utils.book_append_sheet(wb, wsAseg, 'Base Hallazgos Aseguramiento');
+
+            const wsAll = XLSX.utils.json_to_sheet(allData);
+            this.applyColumnWidths(wsAll, colWidths);
+            XLSX.utils.book_append_sheet(wb, wsAll, 'Consolidado');
+
             XLSX.writeFile(wb, `${this.filename}.xlsx`);
-            console.log('✓ Datos exportados a Excel');
-            this.showNotification('Archivo Excel descargado correctamente');
+
+            const conDiligencia = data.filter(r => diligenciaService.get(r.codigo)).length;
+            console.log(`✓ Excel exportado: ${data.length} registros (${conDiligencia} con diligenciamiento Supabase)`);
+            this.showNotification(
+                `Excel descargado: ${data.length} registros` +
+                (conDiligencia ? ` (${conDiligencia} actualizados en línea)` : '')
+            );
+
+            // Refrescar vista del dashboard con los datos fusionados
+            dashboard.updateDashboard(
+                dataManager.filterData(filterManager.getCurrentFilters())
+            );
         } catch (error) {
             console.error('✗ Error al exportar Excel:', error);
             alert('Error al exportar a Excel: ' + error.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     }
 

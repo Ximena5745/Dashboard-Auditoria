@@ -268,10 +268,31 @@ class DataManager {
      * Consolidar y procesar datos
      */
     consolidateData() {
-        this.consolidatedData = this.rawData.map(record => ({
-            ...record,
-            score_prioridad: this.calculatePriorityScore(record)
-        }));
+        this.consolidatedData = this.rawData.map(record => {
+            this.refreshRecordDerivedFields(record);
+            return record;
+        });
+    }
+
+    /**
+     * Recalcular campos derivados de un registro (estado, semáforo, prioridad)
+     */
+    refreshRecordDerivedFields(record) {
+        record.dias_vencidos = this.calculateDaysOverdue(record.fecha_compromiso);
+        record.estado = this.determineState(record);
+        record.semaforo = this.calculateTrafficLight(record);
+        record.score_prioridad = this.calculatePriorityScore(record);
+    }
+
+    /**
+     * Sincronizar un registro en consolidatedData por código (tras guardar diligenciamiento)
+     */
+    syncRecordByCodigo(codigo, updates) {
+        const record = this.consolidatedData.find(r => r.codigo === codigo);
+        if (!record) return null;
+        Object.assign(record, updates);
+        this.refreshRecordDerivedFields(record);
+        return record;
     }
 
     /**
@@ -391,31 +412,42 @@ class DataManager {
     }
 
     /**
-     * Obtener procesos únicos
+     * Valor de proceso para filtros (solo columna Proceso, sin concatenar subproceso)
+     */
+    getProcesoFiltro(record) {
+        return String(record.proceso || '').trim();
+    }
+
+    /**
+     * Valor de subproceso para filtros (solo columna Subproceso)
+     */
+    getSubprocesoFiltro(record) {
+        return String(record.subproceso || '').trim();
+    }
+
+    /**
+     * Obtener procesos únicos (solo nombres de proceso, sin subproceso)
      */
     getUniqueProcesos() {
         const procesos = new Set();
         this.consolidatedData.forEach(record => {
-            const proc = record.proceso_display || record.proceso;
+            const proc = this.getProcesoFiltro(record);
             if (proc) procesos.add(proc);
         });
-        return Array.from(procesos).sort();
+        return Array.from(procesos).sort((a, b) => a.localeCompare(b, 'es'));
     }
 
     /**
-     * Obtener subprocesos filtrados por proceso
+     * Obtener subprocesos filtrados por proceso seleccionado
      */
     getSubprocesosFiltrados(proceso = '') {
         const subprocesos = new Set();
         this.consolidatedData.forEach(record => {
-            if (proceso) {
-                const proc = record.proceso_display || record.proceso;
-                if (proc !== proceso) return;
-            }
-            const sub = record.subproceso;
-            if (sub && String(sub).trim()) subprocesos.add(String(sub).trim());
+            if (proceso && this.getProcesoFiltro(record) !== proceso) return;
+            const sub = this.getSubprocesoFiltro(record);
+            if (sub) subprocesos.add(sub);
         });
-        return Array.from(subprocesos).sort();
+        return Array.from(subprocesos).sort((a, b) => a.localeCompare(b, 'es'));
     }
 
     /**
@@ -434,14 +466,8 @@ class DataManager {
      */
     filterData(filters) {
         return this.consolidatedData.filter(record => {
-            if (filters.proceso) {
-                const proc = record.proceso_display || record.proceso;
-                if (proc !== filters.proceso) return false;
-            }
-            if (filters.subproceso) {
-                const sub = String(record.subproceso || '').trim();
-                if (sub !== filters.subproceso) return false;
-            }
+            if (filters.proceso && this.getProcesoFiltro(record) !== filters.proceso) return false;
+            if (filters.subproceso && this.getSubprocesoFiltro(record) !== filters.subproceso) return false;
             if (filters.auditoria && record.auditoria !== filters.auditoria) return false;
             return true;
         });

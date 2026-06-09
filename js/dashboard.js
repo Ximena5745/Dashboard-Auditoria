@@ -1111,12 +1111,9 @@ class Dashboard {
             payload.mejora_descripcion = elMej ? elMej.value : (record.mejora_descripcion || '');
         }
 
-        // Actualizar registro en memoria para que KPIs y tablas reflejen el cambio
+        // Actualizar registro en memoria y en el dataset consolidado
         Object.assign(record, payload);
-        if (payload.avance_porcentaje != null) {
-            record.estado = dataManager.determineState(record);
-            record.score_prioridad = dataManager.calculatePriorityScore(record);
-        }
+        dataManager.syncRecordByCodigo(codigo, payload);
 
         // Feedback visual inmediato: cambiar icono a spinner
         const btn = this._findSaveButton(idx);
