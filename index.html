@@ -490,8 +490,16 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
+    <!-- Supabase JS (cliente para diligenciamiento online) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Configuración de credenciales (no incluida en el repositorio) -->
+    <!-- Crea js/config.js copiando js/config.example.js con tus credenciales reales -->
+    <script src="js/config.js" onerror="console.warn('config.js no encontrado — diligenciamiento en modo offline')"></script>
+
     <!-- Custom Scripts -->
     <script src="js/dataManager.js"></script>
+    <script src="js/diligenciaService.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/filters.js"></script>
     <script src="js/exports.js"></script>

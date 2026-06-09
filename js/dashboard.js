@@ -13,10 +13,10 @@ class Dashboard {
 
     /**
      * Inicializar dashboard
+     * Nota: diligenciaService ya hizo el merge antes de llamar a init()
      */
     init() {
         this.currentData = dataManager.getData();
-        this.loadSavedData();
         this.updateDashboard(this.currentData);
         console.log('✓ Dashboard inicializado');
     }
@@ -490,10 +490,13 @@ class Dashboard {
     }
 
     /**
-     * Construir celdas condicionales según tipo de acción
+     * Construir celdas condicionales según tipo de acción.
+     * Cada tipo muestra sus campos específicos + un botón fa-save al final.
      * Column indices: 7=cond-ac, 8=cond-pct, 9=cond-val
      */
     buildCondCells(idx, tipo, item) {
+        const codigo = this.escape(item.codigo || '');
+
         if (!tipo) {
             return '<td class="cond-col cond-col-ac"></td><td class="cond-col cond-col-pct"></td><td class="cond-col cond-col-val"></td>';
         }
@@ -502,43 +505,61 @@ class Dashboard {
         let cond1 = '', cond2 = '', cond3 = '';
 
         if (tipo === 'Acción Correctiva') {
+            // N° / Desc. AC: si viene del Excel se muestra pre-llenado; si está vacío, el usuario lo diligencia
             cond1 = `<td class="cond-col cond-col-ac">
                 <span class="cond-cell-label">N° / Desc. AC</span>
-                <input type="text" class="cond-cell-input" value="${this.escape(item.accion_correctiva || '')}"
-                    placeholder="Descripción..."
-                    onchange="dashboard.saveCampoTexto(${idx}, 'accion_correctiva', this.value)">
+                <div class="cond-cell-actions">
+                    <input type="text" class="cond-cell-input" id="ac_accion_${idx}"
+                        value="${this.escape(item.accion_correctiva || '')}"
+                        placeholder="Descripción o N° de la AC...">
+                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
             </td>`;
             cond2 = `<td class="cond-col cond-col-pct">
                 <span class="cond-cell-label">%</span>
-                <input type="number" class="cond-cell-input" value="${avance}" min="0" max="100" style="width:50px;"
-                    onchange="dashboard.saveCampoTexto(${idx}, 'avance_porcentaje', parseInt(this.value))">
+                <input type="number" class="cond-cell-input" id="ac_avance_${idx}"
+                    value="${avance}" min="0" max="100" style="width:52px;">
             </td>`;
             cond3 = `<td class="cond-col cond-col-val">
-                <span class="cond-cell-label">Tipo</span>
-                <input type="text" class="cond-cell-input" value="${this.escape(item.tipo_validacion || '')}"
-                    placeholder="Tipo..."
-                    onchange="dashboard.saveCampoTexto(${idx}, 'tipo_validacion', this.value)">
+                <span class="cond-cell-label">Tipo validación</span>
+                <input type="text" class="cond-cell-input" id="ac_tipoval_${idx}"
+                    value="${this.escape(item.tipo_validacion || '')}"
+                    placeholder="Tipo...">
                 <span class="cond-cell-label" style="margin-top:3px;">Resultado</span>
-                <input type="text" class="cond-cell-input" value="${this.escape(item.resultado_validacion || '')}"
-                    placeholder="Resultado..."
-                    onchange="dashboard.saveCampoTexto(${idx}, 'resultado_validacion', this.value)">
+                <input type="text" class="cond-cell-input" id="ac_resval_${idx}"
+                    value="${this.escape(item.resultado_validacion || '')}"
+                    placeholder="Resultado...">
             </td>`;
+
         } else if (tipo === 'Corrección') {
-            cond1 = `<td class="cond-col cond-col-ac">
+            cond1 = `<td class="cond-col cond-col-ac" colspan="3">
                 <span class="cond-cell-label">Corrección</span>
-                <textarea class="cond-cell-textarea" rows="2" placeholder="Describa la corrección..."
-                    onchange="dashboard.saveCampoTexto(${idx}, 'correccion_descripcion', this.value)">${this.escape(item.correccion_descripcion || '')}</textarea>
+                <div class="cond-cell-actions">
+                    <textarea class="cond-cell-textarea" id="ac_correccion_${idx}"
+                        rows="2" placeholder="Describa la corrección realizada...">${this.escape(item.correccion_descripcion || '')}</textarea>
+                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
             </td>`;
-            cond2 = '<td class="cond-col cond-col-pct"></td>';
-            cond3 = '<td class="cond-col cond-col-val"></td>';
+            cond2 = '';
+            cond3 = '';
+
         } else if (tipo === 'Acción de Mejora') {
-            cond1 = `<td class="cond-col cond-col-ac">
+            cond1 = `<td class="cond-col cond-col-ac" colspan="3">
                 <span class="cond-cell-label">Mejora</span>
-                <textarea class="cond-cell-textarea" rows="2" placeholder="Describa la mejora..."
-                    onchange="dashboard.saveCampoTexto(${idx}, 'mejora_descripcion', this.value)">${this.escape(item.mejora_descripcion || '')}</textarea>
+                <div class="cond-cell-actions">
+                    <textarea class="cond-cell-textarea" id="ac_mejora_${idx}"
+                        rows="2" placeholder="Describa la mejora implementada...">${this.escape(item.mejora_descripcion || '')}</textarea>
+                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
             </td>`;
-            cond2 = '<td class="cond-col cond-col-pct"></td>';
-            cond3 = '<td class="cond-col cond-col-val"></td>';
+            cond2 = '';
+            cond3 = '';
         }
 
         return cond1 + cond2 + cond3;
@@ -563,30 +584,48 @@ class Dashboard {
     }
 
     /**
-     * Manejar cambio de Tipo de Acción
+     * Manejar cambio de Tipo de Acción.
+     * Actualiza en memoria y reconstruye las celdas condicionales de esa fila.
+     * No guarda en Supabase — el usuario debe pulsar el botón guardar.
      */
     onTipoAccionChange(idx, value) {
         const record = this.currentData[idx];
-        if (record) {
-            record.tipo_accion = value;
-            // Find the select that triggered this and rebuild its row's cond cells
-            const select = document.querySelector(`.tipo-accion-select[data-index="${idx}"]`);
-            if (select) {
-                const row = select.closest('tr');
-                if (row) {
-                    const cells = row.querySelectorAll('td');
-                    const temp = document.createElement('tbody');
-                    const tempRow = document.createElement('tr');
-                    tempRow.innerHTML = this.buildCondCells(idx, value, record);
-                    temp.appendChild(tempRow);
-                    const newCells = tempRow.querySelectorAll('td');
-                    if (cells[7]) { cells[7].className = newCells[0] ? newCells[0].className : 'cond-col cond-col-ac'; cells[7].innerHTML = newCells[0] ? newCells[0].innerHTML : ''; }
-                    if (cells[8]) { cells[8].className = newCells[1] ? newCells[1].className : 'cond-col cond-col-pct'; cells[8].innerHTML = newCells[1] ? newCells[1].innerHTML : ''; }
-                    if (cells[9]) { cells[9].className = newCells[2] ? newCells[2].className : 'cond-col cond-col-val'; cells[9].innerHTML = newCells[2] ? newCells[2].innerHTML : ''; }
-                }
-            }
-            this.updateConditionalHeaders(this.currentData);
+        if (!record) return;
+
+        record.tipo_accion = value;
+
+        const select = document.querySelector(`.tipo-accion-select[data-index="${idx}"]`);
+        if (!select) return;
+
+        const row = select.closest('tr');
+        if (!row) return;
+
+        // Reemplazar las 3 celdas condicionales (índices 7, 8, 9) con el nuevo HTML.
+        // Corrección/Mejora usan colspan=3, por lo que hay que eliminar las 3 celdas
+        // existentes e insertar solo 1 nueva.
+        const cells = row.querySelectorAll('td');
+        const newHtml = this.buildCondCells(idx, value, record);
+
+        // Crear fila temporal para parsear el HTML
+        const temp = document.createElement('tbody');
+        const tempRow = document.createElement('tr');
+        tempRow.innerHTML = newHtml;
+        temp.appendChild(tempRow);
+        const newCells = Array.from(tempRow.querySelectorAll('td'));
+
+        // Eliminar celdas 7, 8, 9 actuales (de atrás hacia adelante para no desplazar índices)
+        for (let i = 9; i >= 7; i--) {
+            if (cells[i]) cells[i].remove();
         }
+
+        // Insertar las nuevas celdas antes de la celda de % Avance (posición 7 tras la eliminación)
+        // La celda de referencia es el TD de la barra de avance (ahora en posición 7)
+        const refCell = row.querySelectorAll('td')[7]; // barra de avance
+        newCells.reverse().forEach(td => {
+            row.insertBefore(td, refCell);
+        });
+
+        this.updateConditionalHeaders(this.currentData);
     }
 
     /**
@@ -1042,49 +1081,102 @@ class Dashboard {
     }
 
     /**
-     * Guardar campo de texto (Corrección / Mejora)
+     * Guardar diligenciamiento de un hallazgo en Supabase.
+     * Lee los valores del DOM de la fila correspondiente y llama a diligenciaService.save().
+     * @param {string} codigo - Código del hallazgo (PK en Supabase)
+     * @param {number} idx    - Índice del registro en currentData (para actualizar memoria y UI)
      */
-    saveCampoTexto(index, campo, valor) {
-        const record = this.currentData[index];
-        if (record) {
-            record[campo] = valor;
+    async guardarDiligencia(codigo, idx) {
+        const record = this.currentData[idx];
+        if (!record) return;
 
-            // Guardar en localStorage para persistencia
-            const storageKey = `dashboard_record_${record.codigo}`;
-            const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-            saved[campo] = valor;
-            localStorage.setItem(storageKey, JSON.stringify(saved));
+        // Leer valores actuales de los inputs/textareas de la fila
+        const tipo = record.tipo_accion || '';
+        const payload = { tipo_accion: tipo };
 
-            // Feedback visual
-            const condContent = document.getElementById(`condContent-${index}`);
-            if (condContent) {
-                const btn = condContent.querySelector('button');
-                if (btn) {
-                    const original = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check me-1"></i> Guardado';
-                    btn.classList.add('btn-success');
-                    setTimeout(() => {
-                        btn.innerHTML = original;
-                        btn.classList.remove('btn-success');
-                    }, 1500);
-                }
+        if (tipo === 'Acción Correctiva') {
+            const elAc     = document.getElementById(`ac_accion_${idx}`);
+            const elAvance = document.getElementById(`ac_avance_${idx}`);
+            const elTipoV  = document.getElementById(`ac_tipoval_${idx}`);
+            const elResV   = document.getElementById(`ac_resval_${idx}`);
+            payload.accion_correctiva    = elAc     ? elAc.value     : (record.accion_correctiva    || '');
+            payload.avance_porcentaje    = elAvance ? parseInt(elAvance.value, 10) : (record.avance_porcentaje || 0);
+            payload.tipo_validacion      = elTipoV  ? elTipoV.value  : (record.tipo_validacion      || '');
+            payload.resultado_validacion = elResV   ? elResV.value   : (record.resultado_validacion  || '');
+        } else if (tipo === 'Corrección') {
+            const elCorr = document.getElementById(`ac_correccion_${idx}`);
+            payload.correccion_descripcion = elCorr ? elCorr.value : (record.correccion_descripcion || '');
+        } else if (tipo === 'Acción de Mejora') {
+            const elMej = document.getElementById(`ac_mejora_${idx}`);
+            payload.mejora_descripcion = elMej ? elMej.value : (record.mejora_descripcion || '');
+        }
+
+        // Actualizar registro en memoria para que KPIs y tablas reflejen el cambio
+        Object.assign(record, payload);
+        if (payload.avance_porcentaje != null) {
+            record.estado = dataManager.determineState(record);
+            record.score_prioridad = dataManager.calculatePriorityScore(record);
+        }
+
+        // Feedback visual inmediato: cambiar icono a spinner
+        const btn = this._findSaveButton(idx);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        const ok = await diligenciaService.save(codigo, payload);
+
+        if (btn) {
+            if (ok) {
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.classList.add('saved');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save"></i>';
+                    btn.classList.remove('saved');
+                    btn.disabled = false;
+                }, 1800);
+            } else {
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                btn.classList.add('error');
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-save"></i>';
+                    btn.classList.remove('error');
+                    btn.disabled = false;
+                }, 2500);
             }
         }
+
+        // Refrescar barra de avance en la misma fila sin re-renderizar toda la tabla
+        this._refreshAvanceBadge(idx, record.avance_porcentaje || 0);
     }
 
     /**
-     * Cargar datos guardados del localStorage
+     * Localizar el botón guardar de una fila por índice.
      */
-    loadSavedData() {
-        this.currentData.forEach((record, idx) => {
-            const storageKey = `dashboard_record_${record.codigo}`;
-            const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
-            Object.keys(saved).forEach(key => {
-                if (saved[key] !== undefined && saved[key] !== '') {
-                    record[key] = saved[key];
-                }
-            });
-        });
+    _findSaveButton(idx) {
+        const select = document.querySelector(`.tipo-accion-select[data-index="${idx}"]`);
+        if (!select) return null;
+        const row = select.closest('tr');
+        if (!row) return null;
+        return row.querySelector('.btn-save-diligencia');
+    }
+
+    /**
+     * Refrescar visualmente la barra de avance en la fila del hallazgo.
+     */
+    _refreshAvanceBadge(idx, avance) {
+        const select = document.querySelector(`.tipo-accion-select[data-index="${idx}"]`);
+        if (!select) return;
+        const row = select.closest('tr');
+        if (!row) return;
+        const bar = row.querySelector('.progress-bar');
+        const label = row.querySelector('.progress-bar + small');
+        if (bar) {
+            bar.style.width = `${avance}%`;
+            bar.className = `progress-bar ${avance >= 100 ? 'bg-success' : avance > 0 ? 'bg-primary' : 'bg-secondary'}`;
+        }
+        if (label) label.textContent = `${avance}%`;
     }
 
     /**

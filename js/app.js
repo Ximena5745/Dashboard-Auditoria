@@ -10,6 +10,7 @@ class Application {
 
     /**
      * Inicializar aplicación
+     * Secuencia: Excel → Supabase diligenciamiento → merge → filtros → dashboard → exportaciones
      */
     async init() {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -24,22 +25,30 @@ class Application {
             if (!dataLoaded) {
                 throw new Error('No se pudieron cargar los datos del Excel');
             }
-
             console.log('✓ Datos cargados exitosamente');
 
-            // Paso 2: Inicializar filtros
+            // Paso 2: Inicializar servicio de diligenciamiento y cargar datos guardados
+            console.log('🔗 Conectando diligenciamiento...');
+            diligenciaService.init();
+            await diligenciaService.loadAll();
+
+            // Paso 3: Fusionar diligenciamiento guardado sobre los registros del Excel
+            diligenciaService.mergeIntoRecords(dataManager.consolidatedData);
+            console.log('✓ Diligenciamiento fusionado en registros');
+
+            // Paso 4: Inicializar filtros
             console.log('🔧 Inicializando filtros...');
             filterManager.initFilters();
 
-            // Paso 3: Inicializar dashboard
+            // Paso 5: Inicializar dashboard
             console.log('📊 Inicializando dashboard...');
             dashboard.init();
 
-            // Paso 4: Inicializar exportaciones
+            // Paso 6: Inicializar exportaciones
             console.log('💾 Inicializando exportaciones...');
             exportManager.initExportButtons();
 
-            // Paso 5: Configurar eventos globales
+            // Paso 7: Configurar eventos globales
             this.setupGlobalEvents();
 
             this.isLoading = false;
@@ -64,38 +73,38 @@ class Application {
      * Configurar eventos globales
      */
     setupGlobalEvents() {
-        // Botón Actualizar
+        // Botón Actualizar: recarga Excel + re-merge desde Supabase
         document.getElementById('btnRefresh').addEventListener('click', async () => {
             console.log('🔄 Actualizando datos...');
             const dataLoaded = await dataManager.loadData();
             if (dataLoaded) {
+                await diligenciaService.loadAll();
+                diligenciaService.mergeIntoRecords(dataManager.consolidatedData);
                 filterManager.clearFilters();
                 this.showNotification('Datos actualizados correctamente');
             }
         });
 
-        // Detector de cambios en ventana
+        // Persistir filtros antes de cerrar
         window.addEventListener('beforeunload', () => {
             filterManager.saveFilters();
         });
 
-        // Manejar errores no capturados
+        // Capturar errores no manejados
         window.addEventListener('error', (event) => {
             console.error('⚠️  Error global:', event.error);
         });
 
-        // Manejar promesas rechazadas
         window.addEventListener('unhandledrejection', (event) => {
             console.error('⚠️  Promesa rechazada:', event.reason);
         });
     }
 
     /**
-     * Mostrar mensaje de inicio
+     * Mostrar estadísticas en consola al iniciar
      */
     showStartupMessage() {
         const stats = dataManager.getStatistics();
-        
         console.log('📊 ESTADÍSTICAS GLOBALES:');
         console.log(`   • Total Hallazgos: ${stats.total}`);
         console.log(`   • Críticos: ${stats.criticos} | Medios: ${stats.medios} | Bajos: ${stats.bajos}`);
@@ -106,7 +115,7 @@ class Application {
     }
 
     /**
-     * Mostrar mensaje de error
+     * Mostrar mensaje de error al cargar
      */
     showErrorMessage(error) {
         const div = document.createElement('div');
@@ -132,7 +141,7 @@ class Application {
     }
 
     /**
-     * Mostrar notificación
+     * Mostrar notificación flotante
      */
     showNotification(message, type = 'success') {
         const alertClass = {
@@ -153,10 +162,7 @@ class Application {
         `;
         
         document.body.appendChild(div);
-
-        setTimeout(() => {
-            div.remove();
-        }, 4000);
+        setTimeout(() => div.remove(), 4000);
     }
 }
 
@@ -174,27 +180,26 @@ window.DEBUG = {
     filterManager,
     dashboard,
     exportManager,
+    diligenciaService,
     app,
-    
-    // Funciones útiles
+
     showStats() {
         console.table(dataManager.getStatistics());
     },
-    
     showData(limit = 5) {
         console.table(dataManager.getData().slice(0, limit));
     },
-    
     exportCurrentView() {
         exportManager.exportToExcel();
     },
-    
     clearFiltersDebug() {
         filterManager.clearFilters();
     },
-    
     getFilteredCount() {
         return dashboard.currentData.length;
+    },
+    showDiligencia(codigo) {
+        console.table(diligenciaService.get(codigo));
     }
 };
 

@@ -458,6 +458,65 @@ body {
     margin-bottom: 2px;
 }
 
+/* ========== Botón Guardar Diligenciamiento ==========*/
+
+/* Contenedor que agrupa el input/textarea con el botón guardar */
+.cond-cell-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.cond-cell-actions .cond-cell-input,
+.cond-cell-actions .cond-cell-textarea {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Botón icono guardar */
+.btn-save-diligencia {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1.5px solid var(--color-primary-light);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--color-primary-light);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+    margin-top: 1px;
+}
+
+.btn-save-diligencia:hover:not(:disabled) {
+    background: var(--color-primary-light);
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-save-diligencia:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Estado: guardado correctamente (verde temporal) */
+.btn-save-diligencia.saved {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* Estado: error al guardar (naranja temporal) */
+.btn-save-diligencia.error {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
 /* ========== DataTables ==========*/
 .dataTables_wrapper {
     padding: 0;

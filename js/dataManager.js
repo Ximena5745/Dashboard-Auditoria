@@ -88,8 +88,10 @@ class DataManager {
      */
     async loadData() {
         try {
-            console.log(`🔎 Intentando cargar archivo Excel: ${this.excelFile}`);
-            const response = await fetch(this.excelFile);
+            // Cache-bust para forzar descarga fresca en GitHub Pages y evitar respuestas 304/500 cacheadas
+            const url = this.excelFile + '?t=' + Date.now();
+            console.log(`🔎 Intentando cargar archivo Excel: ${url}`);
+            const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status} ${response.statusText} al solicitar ${this.excelFile}`);
             }
