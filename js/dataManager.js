@@ -237,6 +237,57 @@ class DataManager {
     }
 
     /**
+     * Parsear solo el valor de la columna "Avance" (decimal o porcentaje)
+     */
+    parseAvanceRawValue(val) {
+        if (val === undefined || val === null || val === '') return 0;
+        const str = String(val).replace('%', '').trim();
+        const parsed = parseFloat(str);
+        if (isNaN(parsed)) return 0;
+        if (parsed >= 0 && parsed <= 1) return Math.round(parsed * 100);
+        return Math.min(100, Math.max(0, Math.round(parsed)));
+    }
+
+    /**
+     * Texto para columna N° de OM / Descrip de Actividad según tipo de acción.
+     * Mejora → Acción Correctiva | Corrección/AC → Acciones / Actividades (mapeado en accion_correctiva)
+     */
+    getOmActividad(record, tipo) {
+        const t = tipo || record.tipo_accion || '';
+
+        if (t === 'Acción de Mejora') {
+            if (record.mejora_descripcion) return String(record.mejora_descripcion).trim();
+            return String(record.accion_correctiva || '').trim();
+        }
+        if (t === 'Corrección') {
+            if (record.correccion_descripcion) return String(record.correccion_descripcion).trim();
+            return String(record.accion_correctiva || '').trim();
+        }
+        if (t === 'Acción Correctiva') {
+            return String(record.accion_correctiva || '').trim();
+        }
+        return '';
+    }
+
+    /**
+     * % Avance para columna condicional según tipo de acción.
+     * Mejora → columna Avance | Corrección/AC → columna % Avance
+     */
+    getOmAvance(record, tipo) {
+        const t = tipo || record.tipo_accion || '';
+
+        if (t === 'Acción de Mejora') {
+            if (record.mejora_descripcion && record.avance_porcentaje != null) {
+                return record.avance_porcentaje;
+            }
+            const fromRaw = this.parseAvanceRawValue(record.avance_raw);
+            if (record.avance_raw !== '' && record.avance_raw != null) return fromRaw;
+            return record.avance_porcentaje ?? 0;
+        }
+        return record.avance_porcentaje ?? 0;
+    }
+
+    /**
      * Parsear avance desde múltiples formatos posibles
      * - Decimal: 0.4 -> 40%
      * - Porcentaje directo: 40 -> 40%

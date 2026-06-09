@@ -411,6 +411,47 @@ body {
     background: #f8fafc !important;
 }
 
+.cond-col-ac {
+    min-width: 300px;
+    max-width: 480px;
+    vertical-align: top;
+}
+
+.cond-col-pct {
+    min-width: 72px;
+    vertical-align: top;
+}
+
+.cond-cell-textarea-full {
+    min-height: 52px;
+    max-height: 220px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.45;
+    resize: vertical;
+    field-sizing: content;
+}
+
+.cond-cell-actions--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.cond-cell-actions--stack .btn-save-diligencia {
+    align-self: flex-end;
+    margin-top: 4px;
+}
+
+.cond-cell-input-pct {
+    width: 64px;
+    text-align: center;
+}
+
+#tablaSeguimientoDetallado td {
+    vertical-align: top;
+}
+
 .cond-cell-input {
     width: 100%;
     font-size: 0.7rem;

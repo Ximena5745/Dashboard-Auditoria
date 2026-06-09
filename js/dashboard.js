@@ -406,7 +406,7 @@ class Dashboard {
             const desc = item.descripcion || '';
             const descShort = desc.length > 50 ? desc.substring(0, 50) + '...' : desc;
             const tipoAccion = item.tipo_accion || '';
-            const avance = item.avance_porcentaje || 0;
+            const avance = dataManager.getOmAvance(item, tipoAccion);
 
             const row = document.createElement('tr');
             row.style.cursor = 'pointer';
@@ -494,6 +494,15 @@ class Dashboard {
      * Cada tipo muestra sus campos específicos + un botón fa-save al final.
      * Column indices: 7=cond-ac, 8=cond-pct, 9=cond-val
      */
+    /**
+     * Filas del textarea según longitud del texto (visualización completa)
+     */
+    _textareaRows(text) {
+        const t = String(text || '');
+        const lines = t.split('\n').length;
+        return Math.max(2, Math.min(10, lines + Math.ceil(t.length / 70)));
+    }
+
     buildCondCells(idx, tipo, item) {
         const codigo = this.escape(item.codigo || '');
 
@@ -501,27 +510,31 @@ class Dashboard {
             return '<td class="cond-col cond-col-ac"></td><td class="cond-col cond-col-pct"></td><td class="cond-col cond-col-val"></td>';
         }
 
-        const avance = item.avance_porcentaje || 0;
-        let cond1 = '', cond2 = '', cond3 = '';
+        const omText = dataManager.getOmActividad(item, tipo);
+        const avance = dataManager.getOmAvance(item, tipo);
+        const rows = this._textareaRows(omText);
+        const placeholder = tipo === 'Acción de Mejora'
+            ? 'N° de OM / descripción (Acción Correctiva)...'
+            : 'N° de OM / descripción (Acciones / Actividades)...';
 
+        const cond1 = `<td class="cond-col cond-col-ac">
+            <div class="cond-cell-actions cond-cell-actions--stack">
+                <textarea class="cond-cell-textarea cond-cell-textarea-full" id="ac_om_${idx}"
+                    rows="${rows}" placeholder="${placeholder}">${this.escape(omText)}</textarea>
+                <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+        </td>`;
+
+        const cond2 = `<td class="cond-col cond-col-pct">
+            <span class="cond-cell-label">% Avance</span>
+            <input type="number" class="cond-cell-input cond-cell-input-pct" id="ac_avance_${idx}"
+                value="${avance}" min="0" max="100">
+        </td>`;
+
+        let cond3 = '<td class="cond-col cond-col-val"></td>';
         if (tipo === 'Acción Correctiva') {
-            // N° / Desc. AC: si viene del Excel se muestra pre-llenado; si está vacío, el usuario lo diligencia
-            cond1 = `<td class="cond-col cond-col-ac">
-                <span class="cond-cell-label">N° / Desc. AC</span>
-                <div class="cond-cell-actions">
-                    <input type="text" class="cond-cell-input" id="ac_accion_${idx}"
-                        value="${this.escape(item.accion_correctiva || '')}"
-                        placeholder="Descripción o N° de la AC...">
-                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
-                        <i class="fas fa-save"></i>
-                    </button>
-                </div>
-            </td>`;
-            cond2 = `<td class="cond-col cond-col-pct">
-                <span class="cond-cell-label">%</span>
-                <input type="number" class="cond-cell-input" id="ac_avance_${idx}"
-                    value="${avance}" min="0" max="100" style="width:52px;">
-            </td>`;
             cond3 = `<td class="cond-col cond-col-val">
                 <span class="cond-cell-label">Tipo validación</span>
                 <input type="text" class="cond-cell-input" id="ac_tipoval_${idx}"
@@ -532,34 +545,6 @@ class Dashboard {
                     value="${this.escape(item.resultado_validacion || '')}"
                     placeholder="Resultado...">
             </td>`;
-
-        } else if (tipo === 'Corrección') {
-            cond1 = `<td class="cond-col cond-col-ac" colspan="3">
-                <span class="cond-cell-label">Corrección</span>
-                <div class="cond-cell-actions">
-                    <textarea class="cond-cell-textarea" id="ac_correccion_${idx}"
-                        rows="2" placeholder="Describa la corrección realizada...">${this.escape(item.correccion_descripcion || '')}</textarea>
-                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
-                        <i class="fas fa-save"></i>
-                    </button>
-                </div>
-            </td>`;
-            cond2 = '';
-            cond3 = '';
-
-        } else if (tipo === 'Acción de Mejora') {
-            cond1 = `<td class="cond-col cond-col-ac" colspan="3">
-                <span class="cond-cell-label">Mejora</span>
-                <div class="cond-cell-actions">
-                    <textarea class="cond-cell-textarea" id="ac_mejora_${idx}"
-                        rows="2" placeholder="Describa la mejora implementada...">${this.escape(item.mejora_descripcion || '')}</textarea>
-                    <button class="btn-save-diligencia" title="Guardar" onclick="event.stopPropagation(); dashboard.guardarDiligencia('${codigo}', ${idx})">
-                        <i class="fas fa-save"></i>
-                    </button>
-                </div>
-            </td>`;
-            cond2 = '';
-            cond3 = '';
         }
 
         return cond1 + cond2 + cond3;
@@ -574,12 +559,12 @@ class Dashboard {
         const hasCorrectiva = tipos.has('Acción Correctiva');
 
         table.classList.toggle('show-col-ac', tipos.size > 0);
-        table.classList.toggle('show-col-pct', hasCorrectiva);
+        table.classList.toggle('show-col-pct', tipos.size > 0);
         table.classList.toggle('show-col-val', hasCorrectiva);
 
         const th1 = document.getElementById('thCond1');
         if (tipos.size > 0) {
-            th1.textContent = hasCorrectiva ? 'N° / Desc. AC' : (tipos.has('Corrección') ? 'Corrección' : 'Mejora');
+            th1.textContent = 'N° de OM / Descrip de Actividad';
         }
     }
 
@@ -1094,21 +1079,23 @@ class Dashboard {
         const tipo = record.tipo_accion || '';
         const payload = { tipo_accion: tipo };
 
+        const elOm     = document.getElementById(`ac_om_${idx}`);
+        const elAvance = document.getElementById(`ac_avance_${idx}`);
+        const avanceVal = elAvance ? parseInt(elAvance.value, 10) : dataManager.getOmAvance(record, tipo);
+
         if (tipo === 'Acción Correctiva') {
-            const elAc     = document.getElementById(`ac_accion_${idx}`);
-            const elAvance = document.getElementById(`ac_avance_${idx}`);
-            const elTipoV  = document.getElementById(`ac_tipoval_${idx}`);
-            const elResV   = document.getElementById(`ac_resval_${idx}`);
-            payload.accion_correctiva    = elAc     ? elAc.value     : (record.accion_correctiva    || '');
-            payload.avance_porcentaje    = elAvance ? parseInt(elAvance.value, 10) : (record.avance_porcentaje || 0);
-            payload.tipo_validacion      = elTipoV  ? elTipoV.value  : (record.tipo_validacion      || '');
-            payload.resultado_validacion = elResV   ? elResV.value   : (record.resultado_validacion  || '');
+            const elTipoV = document.getElementById(`ac_tipoval_${idx}`);
+            const elResV  = document.getElementById(`ac_resval_${idx}`);
+            payload.accion_correctiva    = elOm ? elOm.value : (record.accion_correctiva || '');
+            payload.avance_porcentaje    = isNaN(avanceVal) ? 0 : avanceVal;
+            payload.tipo_validacion      = elTipoV ? elTipoV.value : (record.tipo_validacion || '');
+            payload.resultado_validacion = elResV  ? elResV.value  : (record.resultado_validacion || '');
         } else if (tipo === 'Corrección') {
-            const elCorr = document.getElementById(`ac_correccion_${idx}`);
-            payload.correccion_descripcion = elCorr ? elCorr.value : (record.correccion_descripcion || '');
+            payload.correccion_descripcion = elOm ? elOm.value : (record.correccion_descripcion || '');
+            payload.avance_porcentaje = isNaN(avanceVal) ? 0 : avanceVal;
         } else if (tipo === 'Acción de Mejora') {
-            const elMej = document.getElementById(`ac_mejora_${idx}`);
-            payload.mejora_descripcion = elMej ? elMej.value : (record.mejora_descripcion || '');
+            payload.mejora_descripcion = elOm ? elOm.value : (record.mejora_descripcion || '');
+            payload.avance_porcentaje = isNaN(avanceVal) ? 0 : avanceVal;
         }
 
         // Actualizar registro en memoria y en el dataset consolidado
@@ -1144,8 +1131,7 @@ class Dashboard {
             }
         }
 
-        // Refrescar barra de avance en la misma fila sin re-renderizar toda la tabla
-        this._refreshAvanceBadge(idx, record.avance_porcentaje || 0);
+        this._refreshAvanceBadge(idx, dataManager.getOmAvance(record, tipo));
     }
 
     /**

@@ -38,6 +38,7 @@ class ExportManager {
             ? new Date(diligencia.updated_at).toLocaleString('es-ES')
             : '';
 
+        const tipo = record.tipo_accion || '';
         return {
             'Código Hallazgo': record.codigo,
             'Auditoría': record.auditoria,
@@ -47,10 +48,12 @@ class ExportManager {
             'Estado': record.estado,
             'Descripción del Hallazgo': record.descripcion,
             'Responsable del Proceso': record.responsable_proceso || record.responsable_accion || '',
-            'Tipo de Acción': record.tipo_accion || '',
-            'Acción Correctiva': record.accion_correctiva || '',
+            'Tipo de Acción': tipo,
+            'N° de OM / Descrip de Actividad': dataManager.getOmActividad(record, tipo),
+            'Acción Correctiva (Excel)': record.accion_correctiva || '',
             'Descripción Corrección': record.correccion_descripcion || '',
             'Descripción Mejora': record.mejora_descripcion || '',
+            '% Avance OM': dataManager.getOmAvance(record, tipo),
             '% Avance': record.avance_porcentaje ?? 0,
             'Tipo de Validación': record.tipo_validacion || '',
             'Resultado de Validación': record.resultado_validacion || '',
