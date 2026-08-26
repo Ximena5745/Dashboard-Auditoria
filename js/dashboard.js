@@ -59,6 +59,28 @@ class Dashboard {
         document.getElementById('kpiMetaNoConformidades').textContent = categoryShare('No Conformidad');
         document.getElementById('kpiMetaFortalezas').textContent = categoryShare('Fortaleza');
         document.getElementById('kpiMetaRiesgos').textContent = categoryShare('Nuevo Riesgo');
+
+        document.querySelectorAll('.kpi-category-card').forEach(card => {
+            if (card._bound) return;
+            card._bound = true;
+            card.addEventListener('click', () => this.selectCategory(card.dataset.category));
+            card.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    this.selectCategory(card.dataset.category);
+                }
+            });
+        });
+    }
+
+    selectCategory(category) {
+        const select = document.getElementById('filterCategoria');
+        if (!select || typeof filterManager === 'undefined') return;
+        filterManager.currentFilters.categoria = category;
+        select.value = category;
+        filterManager.applyFilters();
+        const tab = document.getElementById('tab-explorar');
+        if (tab && window.bootstrap) bootstrap.Tab.getOrCreateInstance(tab).show();
     }
 
     /**
@@ -66,7 +88,7 @@ class Dashboard {
      */
     updateCharts(data) {
         this.updateChartCriticidad(data);
-        this.updateChartProcesos(data);
+        this.updateChartSubprocesos(data);
     }
 
     /**
@@ -123,14 +145,14 @@ class Dashboard {
     /**
      * Gráfico: Procesos (Bar Chart) - Ordenado mayor a menor, sin números en eje X, con valor en barra
      */
-    updateChartProcesos(data) {
-        const clusters = dataManager.getByCluster('proceso', data);
+    updateChartSubprocesos(data) {
+        const clusters = dataManager.getByCluster('subproceso', data);
 
         // Construir pares [label, count] y ordenar de mayor a menor
         const pairs = Object.entries(clusters)
             .map(([key, records]) => ({
                 key,
-                label: records[0].proceso || key,
+                label: records[0].subproceso || key,
                 count: records.length
             }))
             .sort((a, b) => b.count - a.count)
@@ -367,7 +389,12 @@ class Dashboard {
                 if (record) this.renderExplorerRecord(Number(record.dataset.index));
             });
         }
-        detail.innerHTML = '<p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>';
+        const selectedCategory = filterManager && filterManager.currentFilters ? filterManager.currentFilters.categoria : '';
+        if (selectedCategory) {
+            this.showExplorerDetail(selectedCategory, 'categoria');
+        } else {
+            detail.innerHTML = '<p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>';
+        }
     }
 
     showExplorerDetail(value, groupKey) {
