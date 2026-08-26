@@ -270,11 +270,11 @@ body {
     letter-spacing: 0.3px;
 }
 
-.kpi-card.bg-primary { background: linear-gradient(135deg, #1e40af, #1e3a8a); }
-.kpi-card.bg-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); }
-.kpi-card.bg-warning { background: linear-gradient(135deg, #d97706, #b45309); color: white; }
-.kpi-card.bg-success { background: linear-gradient(135deg, #059669, #047857); }
-.kpi-card.bg-info { background: linear-gradient(135deg, #0891b2, #0e7490); }
+.kpi-card.bg-primary { background: #07355A; }
+.kpi-card.bg-danger { background: #FCB21C; color: #07355A; }
+.kpi-card.bg-warning { background: #EE0000; color: #fff; }
+.kpi-card.bg-success { background: #7EBC2C; color: #07355A; }
+.kpi-card.bg-info { background: #C00000; color: #fff; }
 .kpi-card.bg-dark { background: linear-gradient(135deg, #1e293b, #0f172a); }
 .kpi-card.bg-purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
 .kpi-card.bg-teal { background: linear-gradient(135deg, #0d9488, #0f766e); }

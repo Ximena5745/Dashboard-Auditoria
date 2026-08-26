@@ -167,6 +167,14 @@ class Dashboard {
 
         const labels = pairs.map(p => p.label.length > 35 ? p.label.substring(0, 35) + '...' : p.label);
         const values = pairs.map(p => p.count);
+        const subprocesoColors = [
+            '#07355A', '#2563EB', '#7EBC2C', '#FCB21C', '#C00000',
+            '#0F766E', '#7C3AED', '#0891B2', '#EA580C', '#475569'
+        ];
+        const subprocesoHoverColors = [
+            '#052944', '#1D4ED8', '#5E921F', '#D99300', '#8F0000',
+            '#0A5C54', '#5B21B6', '#0E7490', '#C2410C', '#334155'
+        ];
 
         const ctx = document.getElementById('chartProcesos').getContext('2d');
 
@@ -181,11 +189,11 @@ class Dashboard {
                 datasets: [{
                     label: 'Cantidad de Hallazgos',
                     data: values,
-                    backgroundColor: '#0066cc',
-                    borderColor: '#003d99',
+                    backgroundColor: pairs.map((pair, index) => subprocesoColors[index % subprocesoColors.length]),
+                    borderColor: pairs.map((pair, index) => subprocesoHoverColors[index % subprocesoHoverColors.length]),
                     borderWidth: 2,
                     borderRadius: 5,
-                    hoverBackgroundColor: '#003d99'
+                    hoverBackgroundColor: pairs.map((pair, index) => subprocesoHoverColors[index % subprocesoHoverColors.length])
                 }]
             },
             options: {
@@ -1420,11 +1428,11 @@ class Dashboard {
 
     getSemaforoIcon(semaforo) {
         const icons = {
-            'Vencido': '🔴',
-            'Próximo a vencer': '🟡',
-            'En término': '🟢'
+            'Vencido': 'fas fa-circle-exclamation',
+            'Próximo a vencer': 'fas fa-triangle-exclamation',
+            'En término': 'fas fa-circle-check'
         };
-        return icons[semaforo] || '⚪';
+        return icons[semaforo] || 'fas fa-circle-question';
     }
 }
 
