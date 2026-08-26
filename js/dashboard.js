@@ -30,7 +30,7 @@ class Dashboard {
         this.updateKPIs(filteredData);
         this.updateCharts(filteredData);
         this.updateTables(filteredData);
-        this.updateAlerts(filteredData);
+        this.renderExplorador(filteredData);
         this.renderGestionOperativa(filteredData);
         
         // Actualizar hora de última actualización
@@ -44,15 +44,21 @@ class Dashboard {
      */
     updateKPIs(data) {
         const stats = dataManager.getStatistics(data);
+        const categories = Object.fromEntries(
+            dataManager.getCategorySummary(data).map(item => [item.categoria, item])
+        );
+        const categoryValue = (name) => categories[name] ? categories[name].total : 0;
+        const categoryShare = (name) => categories[name] ? `${categories[name].porcentaje}% del total` : '0% del total';
         
         document.getElementById('kpiTotalHallazgos').textContent = stats.total;
-        document.getElementById('kpiCriticos').textContent = stats.categorias;
-        document.getElementById('kpiMedios').textContent = stats.procesos;
-        document.getElementById('kpiBajos').textContent = stats.subprocesos;
-        document.getElementById('kpiCerrados').textContent = stats.unidades;
-        document.getElementById('kpiVencidos').textContent = stats.recomendaciones;
-        document.getElementById('kpiCumplimiento').textContent = stats.criticidad_disponible ? `${stats.criticidad_disponible}/${stats.total}` : 'N/D';
-        document.getElementById('kpiAvancePromedio').textContent = stats.fechas_disponibles ? `${stats.fechas_disponibles}/${stats.total}` : 'N/D';
+        document.getElementById('kpiCriticos').textContent = categoryValue('Oportunidad de Mejora');
+        document.getElementById('kpiMedios').textContent = categoryValue('No Conformidad');
+        document.getElementById('kpiBajos').textContent = categoryValue('Fortaleza');
+        document.getElementById('kpiCerrados').textContent = categoryValue('Nuevo Riesgo');
+        document.getElementById('kpiMetaOportunidades').textContent = categoryShare('Oportunidad de Mejora');
+        document.getElementById('kpiMetaNoConformidades').textContent = categoryShare('No Conformidad');
+        document.getElementById('kpiMetaFortalezas').textContent = categoryShare('Fortaleza');
+        document.getElementById('kpiMetaRiesgos').textContent = categoryShare('Nuevo Riesgo');
     }
 
     /**
@@ -61,7 +67,6 @@ class Dashboard {
     updateCharts(data) {
         this.updateChartCriticidad(data);
         this.updateChartProcesos(data);
-        this.updateChartEstados(data);
     }
 
     /**
@@ -125,7 +130,7 @@ class Dashboard {
         const pairs = Object.entries(clusters)
             .map(([key, records]) => ({
                 key,
-                label: records[0].proceso_display || records[0].proceso || key,
+                label: records[0].proceso || key,
                 count: records.length
             }))
             .sort((a, b) => b.count - a.count)
@@ -321,9 +326,68 @@ class Dashboard {
      * Actualizar tablas
      */
     updateTables(data) {
-        this.updateTableSumariaAuditoria(data);
         this.updateTableSeguimientoDetallado(data);
         this.updateTableTop10(data);
+    }
+
+    renderExplorador(data) {
+        const container = document.getElementById('exploradorItems');
+        const detail = document.getElementById('exploradorDetalle');
+        if (!container || !detail) return;
+
+        const groups = [
+            { key: 'categoria', label: 'Categorías', icon: 'fa-layer-group' },
+            { key: 'proceso', label: 'Procesos', icon: 'fa-sitemap' },
+            { key: 'subproceso', label: 'Subprocesos', icon: 'fa-diagram-project' }
+        ];
+        container.innerHTML = groups.map(group => {
+            const counts = {};
+            data.forEach(record => {
+                const value = group.key === 'proceso' ? record.proceso : record[group.key];
+                if (value) counts[value] = (counts[value] || 0) + 1;
+            });
+            const items = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            return `
+                <div class="explorer-group">
+                    <div class="explorer-group-title"><i class="fas ${group.icon}"></i>${group.label}</div>
+                    ${items.map(([value, count]) => `
+                        <button class="explorer-item" type="button" data-explorer-value="${this.escape(value)}" data-explorer-group="${group.key}">
+                            <span>${this.escape(value)}</span><strong>${count}</strong>
+                        </button>
+                    `).join('') || '<span class="text-muted small">Sin datos</span>'}
+                </div>`;
+        }).join('');
+        if (!container._bound) {
+            container._bound = true;
+            container.addEventListener('click', (event) => {
+                const item = event.target.closest('.explorer-item');
+                if (item) this.showExplorerDetail(item.dataset.explorerValue, item.dataset.explorerGroup);
+            });
+        }
+        detail.innerHTML = '<p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>';
+    }
+
+    showExplorerDetail(value, groupKey) {
+        const detail = document.getElementById('exploradorDetalle');
+        if (!detail) return;
+        const records = this.currentData.filter(record => {
+            const recordValue = groupKey === 'proceso' ? record.proceso : record[groupKey];
+            return recordValue === value;
+        });
+        detail.innerHTML = `
+            <div class="explorer-detail-heading">
+                <div><span class="text-uppercase small text-muted">${groupKey}</span><h5>${this.escape(value)}</h5></div>
+                <strong>${records.length} hallazgos</strong>
+            </div>
+            <div class="explorer-records">
+                ${records.map(record => {
+                    const index = this.currentData.indexOf(record);
+                    return `<button class="explorer-record" type="button" onclick="dashboard.showDetail(${index})">
+                        <span class="explorer-record-title">${this.escape(record.nombre || 'Hallazgo sin nombre')}</span>
+                        <span class="explorer-record-meta">${this.escape(record.proceso || '')} · ${this.escape(record.subproceso || '')}</span>
+                    </button>`;
+                }).join('')}
+            </div>`;
     }
 
     /**
@@ -660,8 +724,6 @@ class Dashboard {
         // Sin avance
         document.getElementById('alertSinAvance').textContent = 'N/D';
 
-        // Vencidos
-        document.getElementById('alertVencidos').textContent = 'N/D';
     }
 
     /**

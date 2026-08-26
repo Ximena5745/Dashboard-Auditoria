@@ -506,12 +506,27 @@ class DataManager {
         return Array.from(procesos).sort((a, b) => a.localeCompare(b, 'es'));
     }
 
+    getUniqueUnidades() {
+        return Array.from(new Set(
+            this.consolidatedData.map(record => String(record.unidad || '').trim()).filter(Boolean)
+        )).sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
+    getProcesosFiltrados(unidad = '') {
+        return Array.from(new Set(
+            this.consolidatedData
+                .filter(record => !unidad || String(record.unidad || '').trim() === unidad)
+                .map(record => this.getProcesoFiltro(record)).filter(Boolean)
+        )).sort((a, b) => a.localeCompare(b, 'es'));
+    }
+
     /**
      * Obtener subprocesos filtrados por proceso seleccionado
      */
-    getSubprocesosFiltrados(proceso = '') {
+    getSubprocesosFiltrados(proceso = '', unidad = '') {
         const subprocesos = new Set();
         this.consolidatedData.forEach(record => {
+            if (unidad && String(record.unidad || '').trim() !== unidad) return;
             if (proceso && this.getProcesoFiltro(record) !== proceso) return;
             const sub = this.getSubprocesoFiltro(record);
             if (sub) subprocesos.add(sub);
@@ -543,6 +558,7 @@ class DataManager {
         return this.consolidatedData.filter(record => {
             if (filters.proceso && this.getProcesoFiltro(record) !== filters.proceso) return false;
             if (filters.subproceso && this.getSubprocesoFiltro(record) !== filters.subproceso) return false;
+            if (filters.unidad && String(record.unidad || '').trim() !== filters.unidad) return false;
             if (filters.auditoria && record.auditoria !== filters.auditoria) return false;
             if (filters.categoria && record.categoria !== filters.categoria) return false;
             return true;

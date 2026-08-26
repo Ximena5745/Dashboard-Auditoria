@@ -64,7 +64,14 @@
                     </h5>
                 </div>
 
-                <!-- Filtro 1: Proceso -->
+                <!-- Jerarquía: Unidad > Proceso > Subproceso -->
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Unidad</label>
+                    <select id="filterUnidad" class="form-select form-select-sm">
+                        <option value="">-- Todas las Unidades --</option>
+                    </select>
+                </div>
+
                 <div class="col-lg-3 col-md-6">
                     <label class="form-label small fw-semibold">Proceso</label>
                     <select id="filterProceso" class="form-select form-select-sm">
@@ -112,6 +119,9 @@
                 <button class="nav-link" id="tab-gestion" data-bs-toggle="tab" data-bs-target="#vista-gestion" type="button" role="tab" aria-controls="vista-gestion" aria-selected="false">Gestión Operativa</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-explorar" data-bs-toggle="tab" data-bs-target="#vista-explorar" type="button" role="tab" aria-controls="vista-explorar" aria-selected="false">Explorar hallazgos</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-seguimiento" data-bs-toggle="tab" data-bs-target="#vista-detallada" type="button" role="tab" aria-controls="vista-detallada" aria-selected="false">Seguimiento Detallado</button>
             </li>
         </ul>
@@ -126,62 +136,45 @@
             <p class="text-muted small mb-4">Fuente: consolidado de Auditoría Interna 2026. Las métricas no disponibles se identifican como N/D.</p>
 
             <!-- KPI Cards -->
-            <div class="row g-3 mb-4">
-                <div class="col-lg-3 col-md-6">
+            <div class="row g-3 mb-4 executive-kpis">
+                <div class="col-xl col-md-6">
                     <div class="kpi-card bg-primary">
                         <div class="kpi-value" id="kpiTotalHallazgos">0</div>
                         <div class="kpi-label">Total Hallazgos</div>
+                        <div class="kpi-meta">Registros analizados</div>
                         <div class="kpi-icon"><i class="fas fa-file-alt"></i></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <div class="kpi-card bg-danger">
                         <div class="kpi-value" id="kpiCriticos">0</div>
-                        <div class="kpi-label">Categorías identificadas</div>
+                        <div class="kpi-label">Oportunidades de mejora</div>
+                        <div class="kpi-meta" id="kpiMetaOportunidades">0% del total</div>
                         <div class="kpi-icon"><i class="fas fa-exclamation-circle"></i></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <div class="kpi-card bg-warning">
                         <div class="kpi-value" id="kpiMedios">0</div>
-                        <div class="kpi-label">Procesos involucrados</div>
+                        <div class="kpi-label">No conformidades</div>
+                        <div class="kpi-meta" id="kpiMetaNoConformidades">0% del total</div>
                         <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <div class="kpi-card bg-success">
                         <div class="kpi-value" id="kpiBajos">0</div>
-                        <div class="kpi-label">Subprocesos involucrados</div>
+                        <div class="kpi-label">Fortalezas identificadas</div>
+                        <div class="kpi-meta" id="kpiMetaFortalezas">0% del total</div>
                         <div class="kpi-icon"><i class="fas fa-info-circle"></i></div>
                     </div>
                 </div>
-
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <div class="kpi-card bg-info">
                         <div class="kpi-value" id="kpiCerrados">0</div>
-                        <div class="kpi-label">Unidades involucradas</div>
-                        <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="kpi-card bg-dark">
-                        <div class="kpi-value" id="kpiVencidos">0</div>
-                        <div class="kpi-label">Registros con recomendación</div>
+                        <div class="kpi-label">Nuevos riesgos</div>
+                        <div class="kpi-meta" id="kpiMetaRiesgos">0% del total</div>
                         <div class="kpi-icon"><i class="fas fa-clock"></i></div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="kpi-card bg-purple">
-                        <div class="kpi-value" id="kpiCumplimiento">0%</div>
-                        <div class="kpi-label">Registros con criticidad</div>
-                        <div class="kpi-icon"><i class="fas fa-percent"></i></div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="kpi-card bg-teal">
-                        <div class="kpi-value" id="kpiAvancePromedio">0%</div>
-                        <div class="kpi-label">Registros con fecha</div>
-                        <div class="kpi-icon"><i class="fas fa-trending-up"></i></div>
                     </div>
                 </div>
             </div>
@@ -206,91 +199,9 @@
                     </div>
                 </div>
 
-                <!-- Gráfico 3: Estados -->
-                <div class="col-lg-4 col-md-12">
-                    <div class="chart-card">
-                        <h6 class="chart-title">Estado de Acciones</h6>
-                        <div style="height: 300px; position: relative;">
-                            <canvas id="chartEstados"></canvas>
-                        </div>
-                    </div>
-                </div>
+                <!-- El estado de acciones pertenece al seguimiento operativo, no al resumen 2026. -->
             </div>
 
-            <!-- Tabla Resumen por Auditoría -->
-            <div class="row g-3">
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                            <h6 class="mb-0 fw-bold text-dark">
-                                <i class="fas fa-chart-bar me-2 text-primary"></i>Resumen por Auditoría
-                            </h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table id="tablaSumariaAuditoria" class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Auditoría</th>
-                                            <th class="text-center">Total</th>
-                                            <th class="text-center"><span class="badge bg-danger">Altos</span></th>
-                                            <th class="text-center"><span class="badge bg-warning text-dark">Medios</span></th>
-                                            <th class="text-center"><span class="badge bg-success">Bajos</span></th>
-                                            <th class="text-center">% Avance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tbodySumariaAuditoria">
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alertas y Priorización -->
-            <div class="row g-3 mt-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="alert-card alert-risk">
-                        <div class="alert-icon"><i class="fas fa-fire"></i></div>
-                        <div class="alert-content">
-                            <div class="alert-label">Nivel de Riesgo Global</div>
-                            <div class="alert-value" id="alertRiesgoGlobal">Bajo</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="alert-card alert-reincidence">
-                        <div class="alert-icon"><i class="fas fa-redo"></i></div>
-                        <div class="alert-content">
-                            <div class="alert-label">Hallazgos Reincidentes</div>
-                            <div class="alert-value" id="alertReincidencia">0</div>
-                            <div class="alert-percentage" id="alertReincidenciaPorc">0%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="alert-card alert-noProgress">
-                        <div class="alert-icon"><i class="fas fa-pause-circle"></i></div>
-                        <div class="alert-content">
-                            <div class="alert-label">Sin Avance</div>
-                            <div class="alert-value" id="alertSinAvance">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <div class="alert-card alert-expired">
-                        <div class="alert-icon"><i class="fas fa-hourglass-end"></i></div>
-                        <div class="alert-content">
-                            <div class="alert-label">Vencidos</div>
-                            <div class="alert-value" id="alertVencidos">0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </section>
 
         <!-- VISTA 2: GESTIÓN OPERATIVA -->
@@ -417,7 +328,19 @@
             </div>
         </section>
 
-        <!-- VISTA 3: SEGUIMIENTO DETALLADO -->
+        <!-- VISTA 3: EXPLORADOR DE HALLAZGOS -->
+        <section id="vista-explorar" class="tab-pane fade mb-5" role="tabpanel" aria-labelledby="tab-explorar">
+            <h4 class="mb-2 text-dark-emphasis"><i class="fas fa-magnifying-glass-chart me-2 text-primary"></i>Explorar hallazgos</h4>
+            <p class="text-muted small mb-4">Seleccione una dimensión para revisar los registros asociados y abrir su información completa.</p>
+            <div class="explorer-layout">
+                <div class="explorer-selector" id="exploradorItems"></div>
+                <div class="explorer-detail" id="exploradorDetalle">
+                    <p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 4: SEGUIMIENTO DETALLADO -->
         <section id="vista-detallada" class="tab-pane fade mb-5" role="tabpanel" aria-labelledby="tab-seguimiento">
             <h4 class="mb-4 text-dark-emphasis">
                 <i class="fas fa-list-check me-2 text-primary"></i> Seguimiento Detallado

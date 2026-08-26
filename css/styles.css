@@ -130,6 +130,55 @@ body {
     border: none;
 }
 
+.executive-kpis .col-xl {
+    flex: 1 1 0;
+    min-width: 190px;
+}
+
+.kpi-meta {
+    position: relative;
+    z-index: 1;
+    margin-top: 0.35rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+.explorer-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
+    gap: 1rem;
+}
+
+.explorer-selector,
+.explorer-detail {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.explorer-group + .explorer-group { margin-top: 1rem; }
+.explorer-group-title { color: #1f2937; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.explorer-group-title i { color: #2563eb; margin-right: 0.45rem; }
+.explorer-item,
+.explorer-record { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0.5rem; border-radius: 6px; color: #374151; }
+.explorer-item:hover, .explorer-item:focus-visible, .explorer-record:hover, .explorer-record:focus-visible { background: #eff6ff; color: #1d4ed8; outline: none; }
+.explorer-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explorer-item strong { color: #1d4ed8; }
+.explorer-detail-heading { display: flex; justify-content: space-between; align-items: start; gap: 1rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; margin-bottom: 0.5rem; }
+.explorer-detail-heading h5 { margin: 0.15rem 0 0; color: #1f2937; }
+.explorer-detail-heading > strong { color: #1d4ed8; white-space: nowrap; }
+.explorer-record { display: block; border-bottom: 1px solid #f1f5f9; }
+.explorer-record-title, .explorer-record-meta { display: block; }
+.explorer-record-title { font-weight: 700; }
+.explorer-record-meta { color: #64748b; font-size: 0.8rem; margin-top: 0.2rem; }
+.explorer-placeholder { color: #64748b; margin: 1rem 0; }
+
+@media (max-width: 768px) {
+    .explorer-layout { grid-template-columns: 1fr; }
+}
+
 .kpi-card::before {
     content: '';
     position: absolute;

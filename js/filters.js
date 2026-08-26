@@ -9,7 +9,8 @@ class FilterManager {
             proceso: '',
             subproceso: '',
             auditoria: '',
-            categoria: ''
+            categoria: '',
+            unidad: ''
         };
         this.storageKey = 'dashboard_filters';
     }
@@ -34,6 +35,17 @@ class FilterManager {
             this.updateSubprocesoOptions();
             this.currentFilters.subproceso = '';
             document.getElementById('filterSubproceso').value = '';
+            this.applyFilters();
+        });
+
+        document.getElementById('filterUnidad').addEventListener('change', (e) => {
+            this.currentFilters.unidad = e.target.value;
+            this.currentFilters.proceso = '';
+            this.currentFilters.subproceso = '';
+            document.getElementById('filterProceso').value = '';
+            document.getElementById('filterSubproceso').value = '';
+            this.updateProcesoOptions();
+            this.updateSubprocesoOptions();
             this.applyFilters();
         });
 
@@ -62,7 +74,21 @@ class FilterManager {
      */
     populateFilterOptions() {
         // Procesos únicos (solo columna Proceso, sin subproceso concatenado)
-        const procesos = dataManager.getUniqueProcesos();
+        const selectUnidad = document.getElementById('filterUnidad');
+        selectUnidad.innerHTML = '<option value="">-- Todas las Unidades --</option>';
+        dataManager.getUniqueUnidades().forEach(unidad => {
+            const option = document.createElement('option');
+            option.value = unidad;
+            option.textContent = unidad;
+            selectUnidad.appendChild(option);
+        });
+
+        this.updateProcesoOptions();
+        this.updateSubprocesoOptions();
+    }
+
+    updateProcesoOptions() {
+        const procesos = dataManager.getProcesosFiltrados(this.currentFilters.unidad);
         const selectProceso = document.getElementById('filterProceso');
         selectProceso.innerHTML = '<option value="">-- Todos los Procesos --</option>';
         procesos.forEach(proceso => {
@@ -71,9 +97,6 @@ class FilterManager {
             option.textContent = proceso;
             selectProceso.appendChild(option);
         });
-
-        // Subprocesos (todos inicialmente)
-        this.updateSubprocesoOptions();
 
         // Auditorías
         const auditorias = dataManager.getAuditorias();
@@ -103,7 +126,7 @@ class FilterManager {
         const selectSubproceso = document.getElementById('filterSubproceso');
         selectSubproceso.innerHTML = '<option value="">-- Todos los Subprocesos --</option>';
 
-        const subprocesos = dataManager.getSubprocesosFiltrados(this.currentFilters.proceso);
+        const subprocesos = dataManager.getSubprocesosFiltrados(this.currentFilters.proceso, this.currentFilters.unidad);
         subprocesos.forEach(subproceso => {
             const option = document.createElement('option');
             option.value = subproceso;
@@ -135,14 +158,17 @@ class FilterManager {
             proceso: '',
             subproceso: '',
             auditoria: '',
-            categoria: ''
+            categoria: '',
+            unidad: ''
         };
 
         document.getElementById('filterProceso').value = '';
         document.getElementById('filterSubproceso').value = '';
         document.getElementById('filterAuditoria').value = '';
         document.getElementById('filterCategoria').value = '';
+        document.getElementById('filterUnidad').value = '';
 
+        this.updateProcesoOptions();
         this.updateSubprocesoOptions();
         this.applyFilters();
     }
@@ -168,6 +194,7 @@ class FilterManager {
         try {
             const filters = JSON.parse(stored);
             const procesosValidos = new Set(dataManager.getUniqueProcesos());
+            const unidadesValidas = new Set(dataManager.getUniqueUnidades());
             const auditoriasValidas = new Set(dataManager.getAuditorias());
             const categoriasValidas = new Set(dataManager.getCategorias());
 
@@ -175,6 +202,10 @@ class FilterManager {
                 this.currentFilters.proceso = filters.proceso;
             } else if (filters.proceso) {
                 console.warn('⚠ Filtro de proceso obsoleto descartado:', filters.proceso);
+            }
+
+            if (filters.unidad && unidadesValidas.has(filters.unidad)) {
+                this.currentFilters.unidad = filters.unidad;
             }
 
             if (filters.auditoria && auditoriasValidas.has(filters.auditoria)) {
@@ -186,10 +217,13 @@ class FilterManager {
             }
 
             document.getElementById('filterProceso').value = this.currentFilters.proceso;
+            document.getElementById('filterUnidad').value = this.currentFilters.unidad;
+            this.updateProcesoOptions();
+            document.getElementById('filterProceso').value = this.currentFilters.proceso;
             this.updateSubprocesoOptions();
 
             const subprocesosValidos = new Set(
-                dataManager.getSubprocesosFiltrados(this.currentFilters.proceso)
+                dataManager.getSubprocesosFiltrados(this.currentFilters.proceso, this.currentFilters.unidad)
             );
             if (filters.subproceso && subprocesosValidos.has(filters.subproceso)) {
                 this.currentFilters.subproceso = filters.subproceso;
@@ -198,7 +232,7 @@ class FilterManager {
             document.getElementById('filterAuditoria').value = this.currentFilters.auditoria;
             document.getElementById('filterCategoria').value = this.currentFilters.categoria;
 
-            if (this.currentFilters.proceso || this.currentFilters.subproceso || this.currentFilters.auditoria || this.currentFilters.categoria) {
+            if (this.currentFilters.unidad || this.currentFilters.proceso || this.currentFilters.subproceso || this.currentFilters.auditoria || this.currentFilters.categoria) {
                 console.log('✓ Filtros restaurados desde localStorage');
             }
         } catch (error) {
