@@ -355,6 +355,7 @@ class Dashboard {
     renderExplorador(data) {
         const container = document.getElementById('exploradorItems');
         const detail = document.getElementById('exploradorDetalle');
+        const explorerLayout = document.querySelector('.explorer-layout');
         if (!container || !detail) return;
 
         const groups = [
@@ -380,13 +381,20 @@ class Dashboard {
                     `).join('') || '<span class="text-muted small">Sin datos</span>'}
                 </div>`;
         }).join('');
-        if (!container._bound) {
-            container._bound = true;
-            container.addEventListener('click', (event) => {
+        if (explorerLayout && !explorerLayout._bound) {
+            explorerLayout._bound = true;
+            explorerLayout.addEventListener('click', (event) => {
+                const back = event.target.closest('[data-explorer-back]');
+                if (back) {
+                    this.showExplorerDetail(this.explorerSelection.value, this.explorerSelection.groupKey);
+                    return;
+                }
                 const item = event.target.closest('.explorer-item');
                 if (item) this.showExplorerDetail(item.dataset.explorerValue, item.dataset.explorerGroup);
                 const record = event.target.closest('.explorer-record');
                 if (record) this.renderExplorerRecord(Number(record.dataset.index));
+                const openDetail = event.target.closest('[data-explorer-open-detail]');
+                if (openDetail) this.showDetail(Number(openDetail.dataset.explorerOpenDetail));
             });
         }
         const selectedCategory = filterManager && filterManager.currentFilters ? filterManager.currentFilters.categoria : '';
@@ -400,6 +408,7 @@ class Dashboard {
     showExplorerDetail(value, groupKey) {
         const detail = document.getElementById('exploradorDetalle');
         if (!detail) return;
+        this.explorerSelection = { value, groupKey };
         const records = this.currentData.filter(record => {
             const recordValue = groupKey === 'proceso' ? record.proceso : record[groupKey];
             return recordValue === value;
@@ -438,7 +447,10 @@ class Dashboard {
         detail.innerHTML = `
             <div class="explorer-detail-heading">
                 <div><span class="text-uppercase small text-muted">Ficha del hallazgo</span><h5>${this.escape(record.nombre || 'Hallazgo sin nombre')}</h5></div>
-                <button class="btn btn-sm btn-outline-primary" type="button" onclick="dashboard.showDetail(${index})" title="Abrir detalle completo"><i class="fas fa-up-right-from-square"></i></button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-explorer-back title="Volver al listado"><i class="fas fa-arrow-left"></i></button>
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-explorer-open-detail="${index}" title="Abrir detalle completo"><i class="fas fa-up-right-from-square"></i></button>
+                </div>
             </div>
             <div class="explorer-field-grid">
                 ${fields.map(([label, value]) => `<div class="explorer-field ${label === 'Descripción' || label === 'Recomendación' ? 'explorer-field-wide' : ''}"><span>${label}</span><p>${this.escape(value)}</p></div>`).join('')}
@@ -910,7 +922,8 @@ class Dashboard {
         const record = this.currentData[index];
         if (!record) return;
 
-        const offcanvas = new bootstrap.Offcanvas(document.getElementById('panelDetalleHallazgo'));
+        const panel = document.getElementById('panelDetalleHallazgo');
+        const Offcanvas = window.bootstrap?.Offcanvas;
         const origenBadge = record.origen === 'SIG'
             ? '<span class="badge bg-primary">SIG</span>'
             : '<span class="badge bg-secondary">Aseguramiento</span>';
@@ -1080,7 +1093,13 @@ class Dashboard {
         `;
 
         document.getElementById('contenidoDetalleHallazgo').innerHTML = html;
-        offcanvas.show();
+        if (Offcanvas) {
+            Offcanvas.getOrCreateInstance(panel).show();
+        } else {
+            panel.classList.add('show');
+            panel.style.visibility = 'visible';
+            panel.setAttribute('aria-hidden', 'false');
+        }
     }
 
     /**
