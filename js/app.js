@@ -128,7 +128,7 @@ class Application {
             <p class="mb-0">
                 Por favor verifica que:
                 <ul>
-                    <li>El archivo <strong>Matriz_Seguimiento_Hallazgos.xlsx</strong> esté en la carpeta <strong>/data</strong></li>
+                    <li>El archivo <strong>CONSOLIDADO HALLAZGOS AUDITORÍA 2026.xlsx</strong> esté en la carpeta <strong>/data</strong></li>
                     <li>El archivo no esté bloqueado ni abierto en otra aplicación</li>
                     <li>Las hojas se llamen exactamente: <strong>Base Hallazgos SIG</strong> y <strong>Base Hallazgos Aseguramiento</strong></li>
                 </ul>

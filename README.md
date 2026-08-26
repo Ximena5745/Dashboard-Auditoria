@@ -1,10 +1,10 @@
-# Dashboard de Auditoría - Seguimiento de Hallazgos
+# Auditoría Interna 2026 - Resultados ejecutivos
 
-**Versión 1.0** | Politécnico Grancolombiano | 2026
+**Versión 1.1** | Politécnico Grancolombiano | 2026
 
 ## 📋 Descripción
 
-Dashboard web profesional e interactivo para la gestión, seguimiento y análisis de hallazgos de auditoría interna, consolidando datos de los sistemas integrados de gestión (SIG) e Institucional (Aseguramiento).
+Dashboard web interactivo para el resumen ejecutivo de resultados de Auditoría Interna 2026 y el seguimiento posterior de sus registros.
 
 ### Características Principales
 
@@ -24,7 +24,7 @@ Dashboard web profesional e interactivo para la gestión, seguimiento y análisi
 
 ### 1. **Requisitos**
 - Navegador moderno (Chrome, Edge, Firefox, Safari)
-- Archivo Excel: `Matriz_Seguimiento_Hallazgos.xlsx` en carpeta `/data`
+- Archivo Excel: `CONSOLIDADO HALLAZGOS AUDITORÍA 2026.xlsx` en carpeta `/data`
 
 ### 2. **Instalación**
 ```bash
@@ -62,7 +62,7 @@ Dashboard_Auditoria/
 │   └── images/             # Imágenes (futura expansión)
 │
 ├── data/
-│   ├── Matriz_Seguimiento_Hallazgos.xlsx  # Archivo de datos
+│   ├── CONSOLIDADO HALLAZGOS AUDITORÍA 2026.xlsx  # Fuente oficial
 │   └── README.txt          # (Este archivo)
 │
 └── README.md               # Documentación
@@ -269,7 +269,7 @@ window.DEBUG.clearFiltersDebug()      // Limpiar filtros
 ## ⚠️ Solución de Problemas
 
 ### **"Error al cargar el archivo Excel"**
-✅ Verifica que el archivo esté en `/data/Matriz_Seguimiento_Hallazgos.xlsx`  
+✅ Verifica que el archivo esté en `/data/CONSOLIDADO HALLAZGOS AUDITORÍA 2026.xlsx`
 ✅ El archivo no debe estar abierto en Excel  
 ✅ Verifica los nombres exactos de las hojas: "Base Hallazgos SIG" y "Base Hallazgos Aseguramiento"  
 

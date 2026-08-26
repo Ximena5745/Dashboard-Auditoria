@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Auditoría - Seguimiento de Hallazgos</title>
+    <title>Auditoría Interna 2026 - Resultados ejecutivos</title>
     
     <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +38,7 @@
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">
                 <i class="fas fa-shield-alt me-2"></i>
-                Dashboard de Auditoría
+                Auditoría Interna 2026
             </span>
             <div class="ms-auto d-flex gap-2">
                 <button class="btn btn-sm btn-outline-light" id="btnRefresh" title="Actualizar datos">
@@ -88,6 +88,13 @@
                     </select>
                 </div>
 
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label small fw-semibold">Categoría</label>
+                    <select id="filterCategoria" class="form-select form-select-sm">
+                        <option value="">-- Todas las Categorías --</option>
+                    </select>
+                </div>
+
                 <!-- Botón Limpiar -->
                 <div class="col-lg-3 col-md-6 d-flex align-items-end">
                     <button id="btnLimpiarFiltros" class="btn btn-sm btn-outline-secondary">
@@ -113,9 +120,10 @@
 
         <!-- VISTA 1: RESUMEN EJECUTIVO -->
         <section id="vista-resumen" class="tab-pane fade show active mb-5" role="tabpanel" aria-labelledby="tab-resumen">
-            <h4 class="mb-4 text-dark-emphasis">
-                <i class="fas fa-chart-line me-2 text-primary"></i> Resumen Ejecutivo
+            <h4 class="mb-2 text-dark-emphasis">
+                <i class="fas fa-chart-line me-2 text-primary"></i> Resultados ejecutivos
             </h4>
+            <p class="text-muted small mb-4">Fuente: consolidado de Auditoría Interna 2026. Las métricas no disponibles se identifican como N/D.</p>
 
             <!-- KPI Cards -->
             <div class="row g-3 mb-4">
@@ -129,21 +137,21 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-danger">
                         <div class="kpi-value" id="kpiCriticos">0</div>
-                        <div class="kpi-label">Hallazgos Críticos</div>
+                        <div class="kpi-label">Categorías identificadas</div>
                         <div class="kpi-icon"><i class="fas fa-exclamation-circle"></i></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-warning">
                         <div class="kpi-value" id="kpiMedios">0</div>
-                        <div class="kpi-label">Hallazgos Medios</div>
+                        <div class="kpi-label">Procesos involucrados</div>
                         <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-success">
                         <div class="kpi-value" id="kpiBajos">0</div>
-                        <div class="kpi-label">Hallazgos Bajos</div>
+                        <div class="kpi-label">Subprocesos involucrados</div>
                         <div class="kpi-icon"><i class="fas fa-info-circle"></i></div>
                     </div>
                 </div>
@@ -151,28 +159,28 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-info">
                         <div class="kpi-value" id="kpiCerrados">0</div>
-                        <div class="kpi-label">Hallazgos Cerrados</div>
+                        <div class="kpi-label">Unidades involucradas</div>
                         <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-dark">
                         <div class="kpi-value" id="kpiVencidos">0</div>
-                        <div class="kpi-label">Hallazgos Vencidos</div>
+                        <div class="kpi-label">Registros con recomendación</div>
                         <div class="kpi-icon"><i class="fas fa-clock"></i></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-purple">
                         <div class="kpi-value" id="kpiCumplimiento">0%</div>
-                        <div class="kpi-label">% Cumplimiento Global</div>
+                        <div class="kpi-label">Registros con criticidad</div>
                         <div class="kpi-icon"><i class="fas fa-percent"></i></div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="kpi-card bg-teal">
                         <div class="kpi-value" id="kpiAvancePromedio">0%</div>
-                        <div class="kpi-label">% Avance Promedio</div>
+                        <div class="kpi-label">Registros con fecha</div>
                         <div class="kpi-icon"><i class="fas fa-trending-up"></i></div>
                     </div>
                 </div>
@@ -183,7 +191,7 @@
                 <!-- Gráfico 1: Criticidad -->
                 <div class="col-lg-4 col-md-6">
                     <div class="chart-card">
-                        <h6 class="chart-title">Hallazgos por Criticidad</h6>
+                        <h6 class="chart-title">Hallazgos por categoría</h6>
                         <canvas id="chartCriticidad"></canvas>
                     </div>
                 </div>

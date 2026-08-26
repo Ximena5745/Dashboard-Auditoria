@@ -46,13 +46,13 @@ class Dashboard {
         const stats = dataManager.getStatistics(data);
         
         document.getElementById('kpiTotalHallazgos').textContent = stats.total;
-        document.getElementById('kpiCriticos').textContent = stats.criticos;
-        document.getElementById('kpiMedios').textContent = stats.medios;
-        document.getElementById('kpiBajos').textContent = stats.bajos;
-        document.getElementById('kpiCerrados').textContent = stats.cerrados;
-        document.getElementById('kpiVencidos').textContent = stats.vencidos;
-        document.getElementById('kpiCumplimiento').textContent = stats.pct_cumplimiento + '%';
-        document.getElementById('kpiAvancePromedio').textContent = stats.avance_promedio + '%';
+        document.getElementById('kpiCriticos').textContent = stats.categorias;
+        document.getElementById('kpiMedios').textContent = stats.procesos;
+        document.getElementById('kpiBajos').textContent = stats.subprocesos;
+        document.getElementById('kpiCerrados').textContent = stats.unidades;
+        document.getElementById('kpiVencidos').textContent = stats.recomendaciones;
+        document.getElementById('kpiCumplimiento').textContent = stats.criticidad_disponible ? `${stats.criticidad_disponible}/${stats.total}` : 'N/D';
+        document.getElementById('kpiAvancePromedio').textContent = stats.fechas_disponibles ? `${stats.fechas_disponibles}/${stats.total}` : 'N/D';
     }
 
     /**
@@ -68,7 +68,7 @@ class Dashboard {
      * Gráfico: Criticidad (Donut)
      */
     updateChartCriticidad(data) {
-        const stats = dataManager.getStatistics(data);
+        const summary = dataManager.getCategorySummary(data);
         
         const ctx = document.getElementById('chartCriticidad').getContext('2d');
         
@@ -78,38 +78,38 @@ class Dashboard {
         }
 
         this.charts.criticidad = new Chart(ctx, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
-                labels: ['Alto', 'Medio', 'Bajo'],
+                labels: summary.map(item => item.categoria),
                 datasets: [{
-                    data: [stats.criticos, stats.medios, stats.bajos],
-                    backgroundColor: ['#dc3545', '#ffc107', '#28a745'],
-                    borderColor: ['#a02834', '#e0a800', '#1e8449'],
+                    data: summary.map(item => item.total),
+                    backgroundColor: ['#0f766e', '#2563eb', '#d97706', '#b91c1c', '#475569'],
+                    borderColor: '#ffffff',
                     borderWidth: 2,
                     hoverOffset: 10
                 }]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { weight: 'bold', size: 12 },
-                            padding: 15,
-                            usePointStyle: true
-                        }
+                        display: false
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((context.parsed / total) * 100);
-                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                const percentage = Math.round((context.raw / total) * 100);
+                                return `${context.raw} hallazgos (${percentage}%)`;
                             }
                         }
                     }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    y: { grid: { display: false } }
                 }
             }
         });
@@ -651,19 +651,17 @@ class Dashboard {
     updateAlerts(data) {
         const stats = dataManager.getStatistics(data);
         
-        // Riesgo global
-        const riesgo = dataManager.calculateProcessRisk(data);
-        document.getElementById('alertRiesgoGlobal').textContent = riesgo;
+        document.getElementById('alertRiesgoGlobal').textContent = 'N/D';
 
         // Reincidentes
-        document.getElementById('alertReincidencia').textContent = stats.reincidentes;
-        document.getElementById('alertReincidenciaPorc').textContent = `${stats.pct_reincidencia}%`;
+        document.getElementById('alertReincidencia').textContent = 'N/D';
+        document.getElementById('alertReincidenciaPorc').textContent = 'Sin campo fuente';
 
         // Sin avance
-        document.getElementById('alertSinAvance').textContent = stats.sin_avance;
+        document.getElementById('alertSinAvance').textContent = 'N/D';
 
         // Vencidos
-        document.getElementById('alertVencidos').textContent = stats.vencidos;
+        document.getElementById('alertVencidos').textContent = 'N/D';
     }
 
     /**

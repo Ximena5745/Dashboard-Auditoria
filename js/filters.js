@@ -1,6 +1,6 @@
 /**
  * FILTERS - Gestión de filtros globales
- * Filtros: Proceso, Subproceso, Auditoría
+ * Filtros: Proceso, Subproceso, Auditoría y Categoría
  */
 
 class FilterManager {
@@ -8,7 +8,8 @@ class FilterManager {
         this.currentFilters = {
             proceso: '',
             subproceso: '',
-            auditoria: ''
+            auditoria: '',
+            categoria: ''
         };
         this.storageKey = 'dashboard_filters';
     }
@@ -46,6 +47,11 @@ class FilterManager {
             this.applyFilters();
         });
 
+        document.getElementById('filterCategoria').addEventListener('change', (e) => {
+            this.currentFilters.categoria = e.target.value;
+            this.applyFilters();
+        });
+
         document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
             this.clearFilters();
         });
@@ -78,6 +84,15 @@ class FilterManager {
             option.value = auditoria;
             option.textContent = auditoria;
             selectAuditoria.appendChild(option);
+        });
+
+        const selectCategoria = document.getElementById('filterCategoria');
+        selectCategoria.innerHTML = '<option value="">-- Todas las Categorías --</option>';
+        dataManager.getCategorias().forEach(categoria => {
+            const option = document.createElement('option');
+            option.value = categoria;
+            option.textContent = categoria;
+            selectCategoria.appendChild(option);
         });
     }
 
@@ -119,12 +134,14 @@ class FilterManager {
         this.currentFilters = {
             proceso: '',
             subproceso: '',
-            auditoria: ''
+            auditoria: '',
+            categoria: ''
         };
 
         document.getElementById('filterProceso').value = '';
         document.getElementById('filterSubproceso').value = '';
         document.getElementById('filterAuditoria').value = '';
+        document.getElementById('filterCategoria').value = '';
 
         this.updateSubprocesoOptions();
         this.applyFilters();
@@ -152,6 +169,7 @@ class FilterManager {
             const filters = JSON.parse(stored);
             const procesosValidos = new Set(dataManager.getUniqueProcesos());
             const auditoriasValidas = new Set(dataManager.getAuditorias());
+            const categoriasValidas = new Set(dataManager.getCategorias());
 
             if (filters.proceso && procesosValidos.has(filters.proceso)) {
                 this.currentFilters.proceso = filters.proceso;
@@ -161,6 +179,10 @@ class FilterManager {
 
             if (filters.auditoria && auditoriasValidas.has(filters.auditoria)) {
                 this.currentFilters.auditoria = filters.auditoria;
+            }
+
+            if (filters.categoria && categoriasValidas.has(filters.categoria)) {
+                this.currentFilters.categoria = filters.categoria;
             }
 
             document.getElementById('filterProceso').value = this.currentFilters.proceso;
@@ -174,8 +196,9 @@ class FilterManager {
             }
             document.getElementById('filterSubproceso').value = this.currentFilters.subproceso;
             document.getElementById('filterAuditoria').value = this.currentFilters.auditoria;
+            document.getElementById('filterCategoria').value = this.currentFilters.categoria;
 
-            if (this.currentFilters.proceso || this.currentFilters.subproceso || this.currentFilters.auditoria) {
+            if (this.currentFilters.proceso || this.currentFilters.subproceso || this.currentFilters.auditoria || this.currentFilters.categoria) {
                 console.log('✓ Filtros restaurados desde localStorage');
             }
         } catch (error) {

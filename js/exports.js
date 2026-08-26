@@ -174,7 +174,7 @@ class ExportManager {
                     </style>
                 </head>
                 <body>
-                    <h1>Dashboard de Auditoría - Seguimiento de Hallazgos</h1>
+                    <h1>Auditoría Interna 2026 - Resultados ejecutivos</h1>
                     
                     <div class="metadata">
                         <p><strong>Fecha de Generación:</strong> ${new Date().toLocaleString('es-ES')}</p>
