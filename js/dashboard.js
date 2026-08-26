@@ -421,9 +421,20 @@ class Dashboard {
             <div class="explorer-records">
                 ${records.map(record => {
                     const index = this.currentData.indexOf(record);
+                    const categoryClass = this.getCategoryClass(record.categoria);
+                    const description = String(record.descripcion || '').trim();
+                    const excerpt = description.length > 150 ? `${description.substring(0, 150)}...` : description;
                     return `<button class="explorer-record" type="button" data-index="${index}">
-                        <span class="explorer-record-title">${this.escape(record.nombre || 'Hallazgo sin nombre')}</span>
-                        <span class="explorer-record-meta">${this.escape(record.proceso || '')} · ${this.escape(record.subproceso || '')}</span>
+                        <span class="explorer-record-accent ${categoryClass}"></span>
+                        <span class="explorer-record-content">
+                            <span class="explorer-record-topline">
+                                <span class="explorer-category ${categoryClass}">${this.escape(record.categoria || 'Sin categoría')}</span>
+                                <span class="explorer-record-action"><i class="fas fa-chevron-right"></i></span>
+                            </span>
+                            <span class="explorer-record-title">${this.escape(record.nombre || 'Hallazgo sin nombre')}</span>
+                            <span class="explorer-record-meta"><i class="fas fa-sitemap"></i> ${this.escape(record.proceso || 'Sin proceso')} <span>•</span> ${this.escape(record.subproceso || 'Sin subproceso')}</span>
+                            ${excerpt ? `<span class="explorer-record-excerpt">${this.escape(excerpt)}</span>` : ''}
+                        </span>
                     </button>`;
                 }).join('')}
             </div>`;
@@ -455,6 +466,16 @@ class Dashboard {
             <div class="explorer-field-grid">
                 ${fields.map(([label, value]) => `<div class="explorer-field ${label === 'Descripción' || label === 'Recomendación' ? 'explorer-field-wide' : ''}"><span>${label}</span><p>${this.escape(value)}</p></div>`).join('')}
             </div>`;
+    }
+
+    getCategoryClass(category) {
+        const classes = {
+            'Oportunidad de Mejora': 'category-improvement',
+            'No Conformidad': 'category-nonconformity',
+            'Fortaleza': 'category-strength',
+            'Nuevo Riesgo': 'category-risk'
+        };
+        return classes[String(category || '').trim()] || 'category-default';
     }
 
     /**
