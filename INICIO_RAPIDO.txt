@@ -105,11 +105,10 @@ Dashboard_Auditoria/
 
 Ubicación: /data/Matriz_Seguimiento_Hallazgos.xlsx
 
-Hojas consolidadas:
-  1. Base Hallazgos SIG               (12 registros con datos / 204 filas plantilla)
-  2. Base Hallazgos Aseguramiento    (24 registros con datos / 205 filas plantilla)
+Hoja fuente:
+  1. Hoja1 del consolidado 2026
   ────────────────────────────────────────────
-  Total consolidado en dashboard:     (36 registros)
+  Total cargado en dashboard:         (88 registros, sujeto a validación)
 
 Columnas principales:
   • Código Hallazgo

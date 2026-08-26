@@ -129,8 +129,8 @@ class DataManager {
 
             this.rawData = [];
 
-            // El consolidado 2026 usa hojas Hoja1/Hoja2; procesar todas las hojas no vacías.
-            const sheetsToProcess = workbook.SheetNames;
+            // La fuente oficial para el dashboard es exclusivamente la Hoja1.
+            const sheetsToProcess = ['Hoja1'];
 
             sheetsToProcess.forEach((sheetName, index) => {
                 const exists = workbook.SheetNames.includes(sheetName);

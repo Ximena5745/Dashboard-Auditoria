@@ -75,7 +75,7 @@ Dashboard_Auditoria/
 ### **Vista 1: Resumen Ejecutivo**
 
 #### KPIs Principales
-- **Total Hallazgos** - Consolidado SIG + Aseguramiento
+- **Total Hallazgos** - Registros de la Hoja1 del consolidado 2026
 - **Hallazgos Críticos** - Clasificación "Alto"
 - **Hallazgos Medios** - Clasificación "Medio"
 - **Hallazgos Bajos** - Clasificación "Bajo"

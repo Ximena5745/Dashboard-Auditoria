@@ -58,7 +58,7 @@ class Application {
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             const stats = dataManager.getStatistics();
             console.log(`📊 Total de registros (válidos): ${stats.total} — raw: ${dataManager.getData().length}`);
-            console.log(`🗂️  Hojas consolidadas: Base Hallazgos SIG + Base Hallazgos Aseguramiento`);
+            console.log(`🗂️  Hoja fuente: Hoja1 del consolidado 2026`);
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
             this.showStartupMessage();

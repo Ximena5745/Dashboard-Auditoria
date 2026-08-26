@@ -336,6 +336,7 @@ class Dashboard {
         if (!container || !detail) return;
 
         const groups = [
+            { key: 'unidad', label: 'Unidades', icon: 'fa-building' },
             { key: 'categoria', label: 'Categorías', icon: 'fa-layer-group' },
             { key: 'proceso', label: 'Procesos', icon: 'fa-sitemap' },
             { key: 'subproceso', label: 'Subprocesos', icon: 'fa-diagram-project' }
@@ -362,6 +363,8 @@ class Dashboard {
             container.addEventListener('click', (event) => {
                 const item = event.target.closest('.explorer-item');
                 if (item) this.showExplorerDetail(item.dataset.explorerValue, item.dataset.explorerGroup);
+                const record = event.target.closest('.explorer-record');
+                if (record) this.renderExplorerRecord(Number(record.dataset.index));
             });
         }
         detail.innerHTML = '<p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>';
@@ -382,11 +385,36 @@ class Dashboard {
             <div class="explorer-records">
                 ${records.map(record => {
                     const index = this.currentData.indexOf(record);
-                    return `<button class="explorer-record" type="button" onclick="dashboard.showDetail(${index})">
+                    return `<button class="explorer-record" type="button" data-index="${index}">
                         <span class="explorer-record-title">${this.escape(record.nombre || 'Hallazgo sin nombre')}</span>
                         <span class="explorer-record-meta">${this.escape(record.proceso || '')} · ${this.escape(record.subproceso || '')}</span>
                     </button>`;
                 }).join('')}
+            </div>`;
+    }
+
+    renderExplorerRecord(index) {
+        const record = this.currentData[index];
+        const detail = document.getElementById('exploradorDetalle');
+        if (!record || !detail) return;
+
+        const fields = [
+            ['Categoría', record.categoria],
+            ['Unidad', record.unidad],
+            ['Proceso', record.proceso],
+            ['Subproceso', record.subproceso],
+            ['Nombre', record.nombre],
+            ['Descripción', record.descripcion],
+            ['Recomendación', record.recomendaciones]
+        ].filter(([, value]) => String(value || '').trim());
+
+        detail.innerHTML = `
+            <div class="explorer-detail-heading">
+                <div><span class="text-uppercase small text-muted">Ficha del hallazgo</span><h5>${this.escape(record.nombre || 'Hallazgo sin nombre')}</h5></div>
+                <button class="btn btn-sm btn-outline-primary" type="button" onclick="dashboard.showDetail(${index})" title="Abrir detalle completo"><i class="fas fa-up-right-from-square"></i></button>
+            </div>
+            <div class="explorer-field-grid">
+                ${fields.map(([label, value]) => `<div class="explorer-field ${label === 'Descripción' || label === 'Recomendación' ? 'explorer-field-wide' : ''}"><span>${label}</span><p>${this.escape(value)}</p></div>`).join('')}
             </div>`;
     }
 

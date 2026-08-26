@@ -94,6 +94,18 @@ body {
     box-shadow: var(--shadow-md);
 }
 
+.filter-panel > .row {
+    align-items: end;
+}
+
+.filter-auditoria {
+    max-width: 420px;
+}
+
+.filter-panel .col-xl {
+    min-width: 180px;
+}
+
 .filter-panel h5 {
     color: var(--gray-800);
     font-weight: 700;
@@ -174,9 +186,15 @@ body {
 .explorer-record-title { font-weight: 700; }
 .explorer-record-meta { color: #64748b; font-size: 0.8rem; margin-top: 0.2rem; }
 .explorer-placeholder { color: #64748b; margin: 1rem 0; }
+.explorer-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.explorer-field { padding: 0.75rem; background: #f8fafc; border-left: 3px solid #2563eb; }
+.explorer-field-wide { grid-column: 1 / -1; }
+.explorer-field span { display: block; color: #64748b; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.explorer-field p { color: #1f2937; margin: 0.3rem 0 0; white-space: pre-line; }
 
 @media (max-width: 768px) {
     .explorer-layout { grid-template-columns: 1fr; }
+    .explorer-field-grid { grid-template-columns: 1fr; }
 }
 
 .kpi-card::before {

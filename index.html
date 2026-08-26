@@ -64,15 +64,22 @@
                     </h5>
                 </div>
 
+                <div class="col-12 filter-auditoria">
+                    <label class="form-label small fw-semibold">Auditoría</label>
+                    <select id="filterAuditoria" class="form-select form-select-sm">
+                        <option value="">-- Todas las Auditorías --</option>
+                    </select>
+                </div>
+
                 <!-- Jerarquía: Unidad > Proceso > Subproceso -->
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <label class="form-label small fw-semibold">Unidad</label>
                     <select id="filterUnidad" class="form-select form-select-sm">
                         <option value="">-- Todas las Unidades --</option>
                     </select>
                 </div>
 
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <label class="form-label small fw-semibold">Proceso</label>
                     <select id="filterProceso" class="form-select form-select-sm">
                         <option value="">-- Todos los Procesos --</option>
@@ -80,22 +87,14 @@
                 </div>
 
                 <!-- Filtro 2: Subproceso -->
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <label class="form-label small fw-semibold">Subproceso</label>
                     <select id="filterSubproceso" class="form-select form-select-sm">
                         <option value="">-- Todos los Subprocesos --</option>
                     </select>
                 </div>
 
-                <!-- Filtro 3: Auditoría -->
-                <div class="col-lg-3 col-md-6">
-                    <label class="form-label small fw-semibold">Auditoría</label>
-                    <select id="filterAuditoria" class="form-select form-select-sm">
-                        <option value="">-- Todas las Auditorías --</option>
-                    </select>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
+                <div class="col-xl col-md-6">
                     <label class="form-label small fw-semibold">Categoría</label>
                     <select id="filterCategoria" class="form-select form-select-sm">
                         <option value="">-- Todas las Categorías --</option>
@@ -103,7 +102,7 @@
                 </div>
 
                 <!-- Botón Limpiar -->
-                <div class="col-lg-3 col-md-6 d-flex align-items-end">
+                <div class="col-xl col-md-6 d-flex align-items-end">
                     <button id="btnLimpiarFiltros" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> Limpiar Filtros
                     </button>
@@ -116,13 +115,13 @@
                 <button class="nav-link active" id="tab-resumen" data-bs-toggle="tab" data-bs-target="#vista-resumen" type="button" role="tab" aria-controls="vista-resumen" aria-selected="true">Resumen Ejecutivo</button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-seguimiento" data-bs-toggle="tab" data-bs-target="#vista-detallada" type="button" role="tab" aria-controls="vista-detallada" aria-selected="false">Seguimiento Detallado</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-gestion" data-bs-toggle="tab" data-bs-target="#vista-gestion" type="button" role="tab" aria-controls="vista-gestion" aria-selected="false">Gestión Operativa</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-explorar" data-bs-toggle="tab" data-bs-target="#vista-explorar" type="button" role="tab" aria-controls="vista-explorar" aria-selected="false">Explorar hallazgos</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-seguimiento" data-bs-toggle="tab" data-bs-target="#vista-detallada" type="button" role="tab" aria-controls="vista-detallada" aria-selected="false">Seguimiento Detallado</button>
             </li>
         </ul>
 
