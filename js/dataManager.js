@@ -203,6 +203,10 @@ class DataManager {
             normalized[key] = excelColumnName && row[excelColumnName] !== undefined ? row[excelColumnName] : '';
         });
 
+        ['unidad', 'proceso', 'subproceso', 'categoria', 'nombre', 'auditoria'].forEach(field => {
+            if (typeof normalized[field] === 'string') normalized[field] = normalized[field].trim();
+        });
+
         normalized.auditoria = normalized.auditoria || 'Auditoría Interna 2026';
 
         // Construir proceso combinando Proceso + Subproceso si ambos existen
