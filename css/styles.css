@@ -219,6 +219,7 @@ body {
 .kpi-card.bg-warning { background: #EE0000; color: #fff; }
 .kpi-card.bg-success { background: #7EBC2C; color: #07355A; }
 .kpi-card.bg-info { background: #C00000; color: #fff; }
+.kpi-card.kpi-risk { background: #C00000 !important; color: #fff; }
 .kpi-card.bg-danger .kpi-meta, .kpi-card.bg-success .kpi-meta { color: rgba(7, 53, 90, 0.78); }
 .kpi-card.bg-danger .kpi-icon, .kpi-card.bg-success .kpi-icon { color: rgba(7, 53, 90, 0.28); }
 
