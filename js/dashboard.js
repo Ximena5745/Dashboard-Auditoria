@@ -47,18 +47,25 @@ class Dashboard {
         const categories = Object.fromEntries(
             dataManager.getCategorySummary(data).map(item => [item.categoria, item])
         );
+        const globalCategories = Object.fromEntries(
+            dataManager.getCategorySummary().map(item => [item.categoria, item])
+        );
         const categoryValue = (name) => categories[name] ? categories[name].total : 0;
         const categoryShare = (name) => categories[name] ? `${categories[name].porcentaje}% del total` : '0% del total';
+        const globalRiskCount = globalCategories['Nuevo Riesgo'] ? globalCategories['Nuevo Riesgo'].total : 0;
+        const filteredRiskCount = categoryValue('Nuevo Riesgo');
         
         document.getElementById('kpiTotalHallazgos').textContent = stats.total;
         document.getElementById('kpiCriticos').textContent = categoryValue('Oportunidad de Mejora');
         document.getElementById('kpiMedios').textContent = categoryValue('No Conformidad');
         document.getElementById('kpiBajos').textContent = categoryValue('Fortaleza');
-        document.getElementById('kpiCerrados').textContent = categoryValue('Nuevo Riesgo');
+        document.getElementById('kpiCerrados').textContent = globalRiskCount;
         document.getElementById('kpiMetaOportunidades').textContent = categoryShare('Oportunidad de Mejora');
         document.getElementById('kpiMetaNoConformidades').textContent = categoryShare('No Conformidad');
         document.getElementById('kpiMetaFortalezas').textContent = categoryShare('Fortaleza');
-        document.getElementById('kpiMetaRiesgos').textContent = categoryShare('Nuevo Riesgo');
+        document.getElementById('kpiMetaRiesgos').textContent = filteredRiskCount === globalRiskCount
+            ? categoryShare('Nuevo Riesgo')
+            : `${filteredRiskCount} en selección · ${globalRiskCount} total`;
 
         document.querySelectorAll('.kpi-category-card').forEach(card => {
             if (card._bound) return;
@@ -110,7 +117,7 @@ class Dashboard {
                 labels: summary.map(item => item.categoria),
                 datasets: [{
                     data: summary.map(item => item.total),
-                    backgroundColor: ['#0f766e', '#2563eb', '#d97706', '#b91c1c', '#475569'],
+                    backgroundColor: summary.map(item => this.getCategoryColor(item.categoria)),
                     borderColor: '#ffffff',
                     borderWidth: 2,
                     hoverOffset: 10
@@ -476,6 +483,16 @@ class Dashboard {
             'Nuevo Riesgo': 'category-risk'
         };
         return classes[String(category || '').trim()] || 'category-default';
+    }
+
+    getCategoryColor(category) {
+        const colors = {
+            'Oportunidad de Mejora': '#FCB21C',
+            'Fortaleza': '#7EBC2C',
+            'Nuevo Riesgo': '#C00000',
+            'No Conformidad': '#EE0000'
+        };
+        return colors[String(category || '').trim()] || '#07355A';
     }
 
     /**
