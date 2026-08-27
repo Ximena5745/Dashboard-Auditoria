@@ -90,9 +90,9 @@ body {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background: rgba(252, 178, 28, 0.16);
-    border: 1px solid rgba(252, 178, 28, 0.4);
-    color: #FCB21C;
+    background: rgba(31, 178, 222, 0.16);
+    border: 1px solid rgba(31, 178, 222, 0.4);
+    color: #1FB2DE;
     font-size: 1.05rem;
     flex: 0 0 auto;
 }
