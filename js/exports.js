@@ -24,9 +24,7 @@ class ExportManager {
         diligenciaService.mergeIntoRecords(dataManager.consolidatedData);
         dataManager.consolidatedData.forEach(r => dataManager.refreshRecordDerivedFields(r));
 
-        const filters = filterManager.getCurrentFilters();
-        const hasFilters = filters.proceso || filters.subproceso || filters.auditoria;
-        return hasFilters ? dataManager.filterData(filters) : dataManager.getData();
+        return dataManager.filterData(filterManager.getCurrentFilters());
     }
 
     /**
@@ -365,11 +363,11 @@ class ExportManager {
         const filters = filterManager.getCurrentFilters();
         const parts = [];
 
+        if (filters.unidad) parts.push(`Unidad: ${filters.unidad}`);
         if (filters.proceso) parts.push(`Proceso: ${filters.proceso}`);
+        if (filters.subproceso) parts.push(`Subproceso: ${filters.subproceso}`);
+        if (filters.categoria) parts.push(`Categoría: ${filters.categoria}`);
         if (filters.auditoria) parts.push(`Auditoría: ${filters.auditoria}`);
-        if (filters.criticidad) parts.push(`Criticidad: ${filters.criticidad}`);
-        if (filters.estado) parts.push(`Estado: ${filters.estado}`);
-        if (filters.origen) parts.push(`Origen: ${filters.origen}`);
 
         return parts.length > 0 ? parts.join(' | ') : 'Ninguno';
     }

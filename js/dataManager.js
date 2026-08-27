@@ -299,12 +299,8 @@ class DataManager {
         const t = tipo || record.tipo_accion || '';
 
         if (t === 'Acción de Mejora') {
-            if (record.mejora_descripcion && record.avance_porcentaje != null) {
-                return record.avance_porcentaje;
-            }
-            const fromRaw = this.parseAvanceRawValue(record.avance_raw);
-            if (record.avance_raw !== '' && record.avance_raw != null) return fromRaw;
-            return record.avance_porcentaje ?? 0;
+            if (record.avance_porcentaje != null) return record.avance_porcentaje;
+            return this.parseAvanceRawValue(record.avance_raw);
         }
         return record.avance_porcentaje ?? 0;
     }
@@ -316,10 +312,11 @@ class DataManager {
      * - String: "40%" -> 40%
      */
     parseAvance(record) {
-        // Intentar con % Avance primero
+        // Intentar con % Avance primero (si el campo está presente, incluso si es 0)
         let val = record.avance_porcentaje;
-        let num = this.parsePercentage(val);
-        if (num > 0) return num;
+        if (val !== undefined && val !== null && val !== '') {
+            return this.parsePercentage(val);
+        }
 
         // Si % Avance está vacío, usar columna "Avance" (decimal)
         val = record.avance_raw;
@@ -393,6 +390,7 @@ class DataManager {
      * Calcular semáforo de gestión
      */
     calculateTrafficLight(record) {
+        if (record.estado === 'Cerrado') return 'Cerrado';
         const diasVencidos = this.calculateDaysOverdue(record.fecha_compromiso);
         if (diasVencidos > 0) return 'Vencido';
         if (diasVencidos > -5) return 'Próximo a vencer';
@@ -711,11 +709,7 @@ class DataManager {
         const clusters = {};
 
         records.forEach(record => {
-            let key = record[groupBy] || 'Sin especificar';
-            // Para proceso, usar proceso_display
-            if (groupBy === 'proceso') {
-                key = record.proceso_display || record.proceso || 'Sin especificar';
-            }
+            const key = record[groupBy] || 'Sin especificar';
             if (!clusters[key]) clusters[key] = [];
             clusters[key].push(record);
         });
@@ -783,9 +777,7 @@ class DataManager {
             if (score > 6) nivel = 'Alto';
             else if (score > 3) nivel = 'Medio';
 
-            const display = procRecords[0].proceso_display || proceso;
-
-            return { proceso: display, nivel, total, criticos, vencidos, reincidentes, avgAvance };
+            return { proceso, nivel, total, criticos, vencidos, reincidentes, avgAvance };
         }).sort((a, b) => {
             const order = { 'Alto': 0, 'Medio': 1, 'Bajo': 2 };
             return order[a.nivel] - order[b.nivel] || b.total - a.total;

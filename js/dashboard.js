@@ -47,25 +47,17 @@ class Dashboard {
         const categories = Object.fromEntries(
             dataManager.getCategorySummary(data).map(item => [item.categoria, item])
         );
-        const globalCategories = Object.fromEntries(
-            dataManager.getCategorySummary().map(item => [item.categoria, item])
-        );
         const categoryValue = (name) => categories[name] ? categories[name].total : 0;
         const categoryShare = (name) => categories[name] ? `${categories[name].porcentaje}% del total` : '0% del total';
-        const globalRiskCount = globalCategories['Nuevo Riesgo'] ? globalCategories['Nuevo Riesgo'].total : 0;
-        const filteredRiskCount = categoryValue('Nuevo Riesgo');
-        
         document.getElementById('kpiTotalHallazgos').textContent = stats.total;
         document.getElementById('kpiCriticos').textContent = categoryValue('Oportunidad de Mejora');
         document.getElementById('kpiMedios').textContent = categoryValue('No Conformidad');
         document.getElementById('kpiBajos').textContent = categoryValue('Fortaleza');
-        document.getElementById('kpiCerrados').textContent = globalRiskCount;
+        document.getElementById('kpiCerrados').textContent = categoryValue('Nuevo Riesgo');
         document.getElementById('kpiMetaOportunidades').textContent = categoryShare('Oportunidad de Mejora');
         document.getElementById('kpiMetaNoConformidades').textContent = categoryShare('No Conformidad');
         document.getElementById('kpiMetaFortalezas').textContent = categoryShare('Fortaleza');
-        document.getElementById('kpiMetaRiesgos').textContent = filteredRiskCount === globalRiskCount
-            ? categoryShare('Nuevo Riesgo')
-            : `${filteredRiskCount} en selección · ${globalRiskCount} total`;
+        document.getElementById('kpiMetaRiesgos').textContent = categoryShare('Nuevo Riesgo');
 
         document.querySelectorAll('.kpi-category-card').forEach(card => {
             if (card._bound) return;
@@ -253,109 +245,6 @@ class Dashboard {
                     });
                 }
             }]
-        });
-    }
-
-    /**
-     * Gráfico: Estado de Acciones (Stacked Bar por Proceso × Estado)
-     */
-    updateChartEstados(data) {
-        const ctx = document.getElementById('chartEstados').getContext('2d');
-
-        if (this.charts.estados) {
-            this.charts.estados.destroy();
-        }
-
-        // Agrupar por proceso y contar estados
-        const procesosMap = {};
-        const estados = ['Abierto', 'En ejecución', 'Cerrado', 'Vencido'];
-        const colors = {
-            'Abierto': '#0d47a1',
-            'En ejecución': '#e65100',
-            'Cerrado': '#1b5e20',
-            'Vencido': '#b71c1c'
-        };
-
-        data.forEach(record => {
-            const proc = record.proceso_display || record.proceso || 'Sin especificar';
-            const procShort = proc.length > 25 ? proc.substring(0, 25) + '...' : proc;
-            if (!procesosMap[procShort]) {
-                procesosMap[procShort] = { 'Abierto': 0, 'En ejecución': 0, 'Cerrado': 0, 'Vencido': 0 };
-            }
-            const estado = record.estado || 'Abierto';
-            if (procesosMap[procShort][estado] !== undefined) {
-                procesosMap[procShort][estado]++;
-            } else {
-                procesosMap[procShort]['Abierto']++;
-            }
-        });
-
-        // Ordenar procesos por total descendente
-        const sortedProcs = Object.entries(procesosMap)
-            .map(([name, counts]) => ({
-                name,
-                total: Object.values(counts).reduce((a, b) => a + b, 0),
-                counts
-            }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 10);
-
-        const labels = sortedProcs.map(p => p.name);
-
-        this.charts.estados = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: estados.map(estado => ({
-                    label: estado,
-                    data: sortedProcs.map(p => p.counts[estado]),
-                    backgroundColor: colors[estado],
-                    borderColor: colors[estado],
-                    borderWidth: 1
-                }))
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: true,
-                layout: {
-                    padding: { right: 10 }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, font: { size: 10 } },
-                        grid: { display: false }
-                    },
-                    y: {
-                        stacked: true,
-                        grid: { display: false },
-                        ticks: {
-                            font: { size: 10, weight: '600' },
-                            color: '#374151'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { weight: 'bold', size: 10 },
-                            padding: 10,
-                            usePointStyle: true,
-                            pointStyle: 'rectRounded'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.parsed.x}`;
-                            }
-                        }
-                    }
-                }
-            }
         });
     }
 
@@ -589,50 +478,23 @@ class Dashboard {
             </div>`;
     }
 
-    getCategoryClass(category) {
-        const classes = {
-            'Oportunidad de Mejora': 'category-improvement',
-            'No Conformidad': 'category-nonconformity',
-            'Fortaleza': 'category-strength',
-            'Nuevo Riesgo': 'category-risk'
+    static get CATEGORY_META() {
+        return {
+            'Oportunidad de Mejora': { class: 'category-improvement', color: '#FCB21C' },
+            'No Conformidad': { class: 'category-nonconformity', color: '#EE0000' },
+            'Fortaleza': { class: 'category-strength', color: '#7EBC2C' },
+            'Nuevo Riesgo': { class: 'category-risk', color: '#C00000' }
         };
-        return classes[String(category || '').trim()] || 'category-default';
+    }
+
+    getCategoryClass(category) {
+        const meta = Dashboard.CATEGORY_META[String(category || '').trim()];
+        return meta ? meta.class : 'category-default';
     }
 
     getCategoryColor(category) {
-        const colors = {
-            'Oportunidad de Mejora': '#FCB21C',
-            'Fortaleza': '#7EBC2C',
-            'Nuevo Riesgo': '#C00000',
-            'No Conformidad': '#EE0000'
-        };
-        return colors[String(category || '').trim()] || '#07355A';
-    }
-
-    /**
-     * Tabla: Resumen por Auditoría
-     */
-    updateTableSumariaAuditoria(data) {
-        const summary = dataManager.getSummaryByAuditoria(data);
-        const tbody = document.getElementById('tbodySumariaAuditoria');
-        tbody.innerHTML = '';
-
-        summary.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>${this.escape(item.auditoria)}</strong></td>
-                <td class="text-center"><strong>${item.total}</strong></td>
-                <td class="text-center"><span class="badge bg-danger">${item.altos}</span></td>
-                <td class="text-center"><span class="badge bg-warning text-dark">${item.medios}</span></td>
-                <td class="text-center"><span class="badge bg-success">${item.bajos}</span></td>
-                <td class="text-center">
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar" style="width: ${item.avance_promedio}%">${item.avance_promedio}%</div>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
+        const meta = Dashboard.CATEGORY_META[String(category || '').trim()];
+        return meta ? meta.color : '#07355A';
     }
 
     /**
@@ -929,23 +791,6 @@ class Dashboard {
     }
 
     /**
-     * Actualizar alertas
-     */
-    updateAlerts(data) {
-        const stats = dataManager.getStatistics(data);
-        
-        document.getElementById('alertRiesgoGlobal').textContent = 'N/D';
-
-        // Reincidentes
-        document.getElementById('alertReincidencia').textContent = 'N/D';
-        document.getElementById('alertReincidenciaPorc').textContent = 'Sin campo fuente';
-
-        // Sin avance
-        document.getElementById('alertSinAvance').textContent = 'N/D';
-
-    }
-
-    /**
      * Renderizar pestaña de Gestión Operativa
      */
     renderGestionOperativa(data) {
@@ -1092,7 +937,8 @@ class Dashboard {
         const semaforoColor = {
             'Vencido': '#dc3545',
             'Próximo a vencer': '#ffc107',
-            'En término': '#28a745'
+            'En término': '#28a745',
+            'Cerrado': '#198754'
         }[record.semaforo] || '#6c757d';
 
         // Línea de tiempo
