@@ -624,8 +624,7 @@ body {
 }
 
 #tablaSeguimientoDetallado.show-col-ac .cond-col-ac,
-#tablaSeguimientoDetallado.show-col-pct .cond-col-pct,
-#tablaSeguimientoDetallado.show-col-val .cond-col-val {
+#tablaSeguimientoDetallado.show-col-pct .cond-col-pct {
     display: table-cell;
 }
 

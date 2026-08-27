@@ -579,6 +579,7 @@ class Dashboard {
                         <small class="fw-semibold text-nowrap">${avance}%</small>
                     </div>
                 </td>
+                ${this.buildResultadoCell(idx, tipoAccion, item)}
                 <td>
                     <button class="btn btn-sm btn-outline-primary" data-index="${idx}" onclick="event.stopPropagation(); dashboard.showDetail(${idx})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
@@ -652,7 +653,7 @@ class Dashboard {
         const codigo = this.escape(item.codigo || '');
 
         if (!tipo) {
-            return '<td class="cond-col cond-col-ac"></td><td class="cond-col cond-col-pct"></td><td class="cond-col cond-col-val"></td>';
+            return '<td class="cond-col cond-col-ac"></td><td class="cond-col cond-col-pct"></td>';
         }
 
         const omText = dataManager.getOmActividad(item, tipo);
@@ -678,21 +679,24 @@ class Dashboard {
                 value="${avance}" min="0" max="100">
         </td>`;
 
-        let cond3 = '<td class="cond-col cond-col-val"></td>';
-        if (tipo === 'Acción Correctiva') {
-            cond3 = `<td class="cond-col cond-col-val">
-                <span class="cond-cell-label">Tipo validación</span>
-                <input type="text" class="cond-cell-input" id="ac_tipoval_${idx}"
-                    value="${this.escape(item.tipo_validacion || '')}"
-                    placeholder="Tipo...">
-                <span class="cond-cell-label" style="margin-top:3px;">Resultado</span>
-                <input type="text" class="cond-cell-input" id="ac_resval_${idx}"
-                    value="${this.escape(item.resultado_validacion || '')}"
-                    placeholder="Resultado...">
-            </td>`;
-        }
+        return cond1 + cond2;
+    }
 
-        return cond1 + cond2 + cond3;
+    /**
+     * Celda "Resultado" (resultado de validación), al final de la fila.
+     * Solo editable para Tipo de Acción = Acción Correctiva.
+     */
+    buildResultadoCell(idx, tipo, item) {
+        if (tipo !== 'Acción Correctiva') {
+            return '<td class="text-muted text-center">—</td>';
+        }
+        const resultado = item.resultado_validacion || '';
+        const options = ['', 'Eficaz', 'No eficaz', 'Parcialmente eficaz'];
+        return `<td>
+            <select class="form-select form-select-sm" id="ac_resval_${idx}">
+                ${options.map(opt => `<option value="${this.escape(opt)}" ${resultado === opt ? 'selected' : ''}>${opt || '-- Selec. --'}</option>`).join('')}
+            </select>
+        </td>`;
     }
 
     /**
@@ -701,11 +705,9 @@ class Dashboard {
     updateConditionalHeaders(data) {
         const tipos = new Set(data.map(d => d.tipo_accion).filter(Boolean));
         const table = document.getElementById('tablaSeguimientoDetallado');
-        const hasCorrectiva = tipos.has('Acción Correctiva');
 
         table.classList.toggle('show-col-ac', tipos.size > 0);
         table.classList.toggle('show-col-pct', tipos.size > 0);
-        table.classList.toggle('show-col-val', hasCorrectiva);
 
         const th1 = document.getElementById('thCond1');
         if (tipos.size > 0) {
@@ -730,30 +732,20 @@ class Dashboard {
         const row = select.closest('tr');
         if (!row) return;
 
-        // Reemplazar las 3 celdas condicionales (índices 7, 8, 9) con el nuevo HTML.
-        // Corrección/Mejora usan colspan=3, por lo que hay que eliminar las 3 celdas
-        // existentes e insertar solo 1 nueva.
         const cells = row.querySelectorAll('td');
-        const newHtml = this.buildCondCells(idx, value, record);
 
-        // Crear fila temporal para parsear el HTML
-        const temp = document.createElement('tbody');
-        const tempRow = document.createElement('tr');
-        tempRow.innerHTML = newHtml;
-        temp.appendChild(tempRow);
-        const newCells = Array.from(tempRow.querySelectorAll('td'));
+        // Celdas condicionales (N° de OM, % Avance OM) en posiciones fijas 7 y 8
+        const condRow = document.createElement('tr');
+        condRow.innerHTML = this.buildCondCells(idx, value, record);
+        const newCondCells = Array.from(condRow.querySelectorAll('td'));
+        if (cells[7] && newCondCells[0]) cells[7].replaceWith(newCondCells[0]);
+        if (cells[8] && newCondCells[1]) cells[8].replaceWith(newCondCells[1]);
 
-        // Eliminar celdas 7, 8, 9 actuales (de atrás hacia adelante para no desplazar índices)
-        for (let i = 9; i >= 7; i--) {
-            if (cells[i]) cells[i].remove();
-        }
-
-        // Insertar las nuevas celdas antes de la celda de % Avance (posición 7 tras la eliminación)
-        // La celda de referencia es el TD de la barra de avance (ahora en posición 7)
-        const refCell = row.querySelectorAll('td')[7]; // barra de avance
-        newCells.reverse().forEach(td => {
-            row.insertBefore(td, refCell);
-        });
+        // Celda de Resultado (posición 10, tras % Avance en 9)
+        const resRow = document.createElement('tr');
+        resRow.innerHTML = this.buildResultadoCell(idx, value, record);
+        const newResCell = resRow.querySelector('td');
+        if (cells[10] && newResCell) cells[10].replaceWith(newResCell);
 
         this.updateConditionalHeaders(this.currentData);
     }
@@ -1216,11 +1208,9 @@ class Dashboard {
         const avanceVal = elAvance ? parseInt(elAvance.value, 10) : dataManager.getOmAvance(record, tipo);
 
         if (tipo === 'Acción Correctiva') {
-            const elTipoV = document.getElementById(`ac_tipoval_${idx}`);
             const elResV  = document.getElementById(`ac_resval_${idx}`);
             payload.accion_correctiva    = elOm ? elOm.value : (record.accion_correctiva || '');
             payload.avance_porcentaje    = isNaN(avanceVal) ? 0 : avanceVal;
-            payload.tipo_validacion      = elTipoV ? elTipoV.value : (record.tipo_validacion || '');
             payload.resultado_validacion = elResV  ? elResV.value  : (record.resultado_validacion || '');
         } else if (tipo === 'Corrección') {
             payload.correccion_descripcion = elOm ? elOm.value : (record.correccion_descripcion || '');
