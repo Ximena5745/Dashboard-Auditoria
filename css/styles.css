@@ -78,7 +78,7 @@ body {
     right: 0;
     bottom: 0;
     height: 3px;
-    background: linear-gradient(90deg, #FCB21C 0%, #FCB21C 35%, rgba(252, 178, 28, 0.15) 100%);
+    background: linear-gradient(90deg, #1FB2DE 0%, #1FB2DE 35%, rgba(31, 178, 222, 0.15) 100%);
 }
 
 .navbar-identity { display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 1; }
