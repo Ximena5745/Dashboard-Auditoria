@@ -119,6 +119,9 @@ class Dashboard {
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: true,
+                layout: {
+                    padding: { right: 30 }
+                },
                 plugins: {
                     legend: {
                         display: false
@@ -134,10 +137,52 @@ class Dashboard {
                     }
                 },
                 scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    y: { grid: { display: false } }
+                    x: {
+                        beginAtZero: true,
+                        display: false,
+                        grid: { display: false }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 11, weight: '600' },
+                            color: '#374151'
+                        }
+                    }
                 }
-            }
+            },
+            plugins: [{
+                id: 'barValueCriticidad',
+                afterDatasetsDraw: function(chart) {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const baseX = xScale.getPixelForValue(0);
+                    chart.data.datasets.forEach(function(dataset, datasetIndex) {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        meta.data.forEach(function(bar, index) {
+                            const value = dataset.data[index];
+                            const text = String(value);
+                            ctx.save();
+                            ctx.font = 'bold 12px Segoe UI';
+                            ctx.textBaseline = 'middle';
+                            const barWidth = bar.x - baseX;
+                            const textWidth = ctx.measureText(text).width;
+                            if (barWidth >= textWidth + 12) {
+                                // Cabe dentro de la barra: centrado en blanco
+                                ctx.fillStyle = '#ffffff';
+                                ctx.textAlign = 'center';
+                                ctx.fillText(text, baseX + barWidth / 2, bar.y);
+                            } else {
+                                // Barra pequeña: afuera a la derecha en oscuro
+                                ctx.fillStyle = '#333';
+                                ctx.textAlign = 'left';
+                                ctx.fillText(text, bar.x + 5, bar.y);
+                            }
+                            ctx.restore();
+                        });
+                    });
+                }
+            }]
         });
     }
 
