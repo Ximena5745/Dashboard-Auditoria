@@ -379,6 +379,8 @@ class Dashboard {
             { key: 'proceso', label: 'Procesos', icon: 'fa-sitemap' },
             { key: 'subproceso', label: 'Subprocesos', icon: 'fa-diagram-project' }
         ];
+        const activeFilters = typeof filterManager !== 'undefined' ? filterManager.currentFilters : {};
+        this.renderExplorerActiveFilters(activeFilters);
         container.innerHTML = groups.map(group => {
             const counts = {};
             data.forEach(record => {
@@ -390,7 +392,7 @@ class Dashboard {
                 <div class="explorer-group">
                     <div class="explorer-group-title"><i class="fas ${group.icon}"></i>${group.label}</div>
                     ${items.map(([value, count]) => `
-                        <button class="explorer-item" type="button" data-explorer-value="${this.escape(value)}" data-explorer-group="${group.key}">
+                        <button class="explorer-item ${activeFilters[group.key] === value ? 'is-selected' : ''}" type="button" data-explorer-value="${this.escape(value)}" data-explorer-group="${group.key}">
                             <span>${this.escape(value)}</span><strong>${count}</strong>
                         </button>
                     `).join('') || '<span class="text-muted small">Sin datos</span>'}
@@ -405,19 +407,123 @@ class Dashboard {
                     return;
                 }
                 const item = event.target.closest('.explorer-item');
-                if (item) this.showExplorerDetail(item.dataset.explorerValue, item.dataset.explorerGroup);
+                if (item) {
+                    this.applyExplorerFilter(item.dataset.explorerGroup, item.dataset.explorerValue);
+                    return;
+                }
                 const record = event.target.closest('.explorer-record');
                 if (record) this.renderExplorerRecord(Number(record.dataset.index));
                 const openDetail = event.target.closest('[data-explorer-open-detail]');
                 if (openDetail) this.showDetail(Number(openDetail.dataset.explorerOpenDetail));
             });
         }
-        const selectedCategory = filterManager && filterManager.currentFilters ? filterManager.currentFilters.categoria : '';
-        if (selectedCategory) {
-            this.showExplorerDetail(selectedCategory, 'categoria');
+        const focus = this.getExplorerFocus(activeFilters);
+        if (focus) {
+            this.showExplorerDetail(focus.value, focus.groupKey);
         } else {
-            detail.innerHTML = '<p class="explorer-placeholder">Seleccione una categoría, proceso o subproceso para ver sus hallazgos.</p>';
+            detail.innerHTML = '<p class="explorer-placeholder"><i class="fas fa-magnifying-glass-chart"></i>Seleccione una categoría, unidad, proceso o subproceso para ver sus hallazgos.</p>';
         }
+    }
+
+    /**
+     * Muestra chips con los filtros globales activos y permite quitarlos desde Explorar.
+     */
+    renderExplorerActiveFilters(activeFilters) {
+        const wrap = document.getElementById('exploradorFiltrosActivos');
+        if (!wrap) return;
+
+        const labels = { unidad: 'Unidad', proceso: 'Proceso', subproceso: 'Subproceso', categoria: 'Categoría', auditoria: 'Auditoría' };
+        const entries = Object.keys(labels).filter(key => activeFilters && activeFilters[key]);
+
+        if (!entries.length) {
+            wrap.innerHTML = '';
+            wrap.classList.remove('has-filters');
+            return;
+        }
+
+        wrap.classList.add('has-filters');
+        wrap.innerHTML = `
+            <span class="explorer-filters-label"><i class="fas fa-filter"></i> Filtros activos:</span>
+            ${entries.map(key => `
+                <span class="explorer-filter-chip">
+                    <span class="explorer-filter-chip-label">${labels[key]}:</span> ${this.escape(activeFilters[key])}
+                    <button type="button" class="explorer-filter-chip-remove" data-explorer-remove-filter="${key}" title="Quitar filtro de ${labels[key]}" aria-label="Quitar filtro de ${labels[key]}">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </span>
+            `).join('')}
+            <button type="button" class="explorer-filters-clear" data-explorer-clear-filters>Limpiar todo</button>`;
+
+        if (!wrap._bound) {
+            wrap._bound = true;
+            wrap.addEventListener('click', (event) => {
+                if (typeof filterManager === 'undefined') return;
+                const clearAll = event.target.closest('[data-explorer-clear-filters]');
+                if (clearAll) {
+                    filterManager.clearFilters();
+                    return;
+                }
+                const removeBtn = event.target.closest('[data-explorer-remove-filter]');
+                if (removeBtn) {
+                    const key = removeBtn.dataset.explorerRemoveFilter;
+                    filterManager.currentFilters[key] = '';
+                    const selectId = `filter${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+                    const select = document.getElementById(selectId);
+                    if (select) select.value = '';
+                    if (key === 'unidad') {
+                        filterManager.currentFilters.proceso = '';
+                        filterManager.currentFilters.subproceso = '';
+                        document.getElementById('filterProceso').value = '';
+                        document.getElementById('filterSubproceso').value = '';
+                        filterManager.updateProcesoOptions();
+                    } else if (key === 'proceso') {
+                        filterManager.currentFilters.subproceso = '';
+                        document.getElementById('filterSubproceso').value = '';
+                    }
+                    filterManager.updateSubprocesoOptions();
+                    filterManager.applyFilters();
+                }
+            });
+        }
+    }
+
+    /**
+     * Determina qué dimensión de filtro activa debe mostrarse en el panel de detalle.
+     * Prioriza la más específica (subproceso > proceso > unidad > categoría).
+     */
+    getExplorerFocus(activeFilters) {
+        if (!activeFilters) return null;
+        const priority = ['subproceso', 'proceso', 'unidad', 'categoria'];
+        for (const groupKey of priority) {
+            if (activeFilters[groupKey]) {
+                return { groupKey, value: activeFilters[groupKey] };
+            }
+        }
+        return null;
+    }
+
+    applyExplorerFilter(groupKey, value) {
+        if (typeof filterManager === 'undefined') return;
+        const filters = filterManager.currentFilters;
+        filters[groupKey] = value;
+
+        if (groupKey === 'unidad') {
+            filters.proceso = '';
+            filters.subproceso = '';
+            document.getElementById('filterProceso').value = '';
+            document.getElementById('filterSubproceso').value = '';
+            filterManager.updateProcesoOptions();
+        } else if (groupKey === 'proceso') {
+            filters.subproceso = '';
+            document.getElementById('filterSubproceso').value = '';
+        }
+
+        const selectId = `filter${groupKey.charAt(0).toUpperCase()}${groupKey.slice(1)}`;
+        const select = document.getElementById(selectId);
+        if (select) select.value = value;
+        filterManager.updateSubprocesoOptions();
+        filterManager.applyFilters();
+        this.showExplorerDetail(value, groupKey);
     }
 
     showExplorerDetail(value, groupKey) {
