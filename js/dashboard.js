@@ -160,11 +160,11 @@ class Dashboard {
         const labels = pairs.map(p => p.label.length > 35 ? p.label.substring(0, 35) + '...' : p.label);
         const values = pairs.map(p => p.count);
         const subprocesoColors = [
-            '#07355A', '#2563EB', '#7EBC2C', '#FCB21C', '#C00000',
+            '#07355A', '#2563EB', '#7EBC2C', '#FCB21C', '#DB2777',
             '#0F766E', '#7C3AED', '#0891B2', '#EA580C', '#475569'
         ];
         const subprocesoHoverColors = [
-            '#052944', '#1D4ED8', '#5E921F', '#D99300', '#8F0000',
+            '#052944', '#1D4ED8', '#5E921F', '#D99300', '#9D174D',
             '#0A5C54', '#5B21B6', '#0E7490', '#C2410C', '#334155'
         ];
 
