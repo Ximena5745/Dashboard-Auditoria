@@ -87,7 +87,9 @@ class DataManager {
         const findHeader = (...names) => names.find(name => headers.includes(name)) || '';
         return {
             'codigo': findHeader('Código Hallazgo', 'Código', 'ID', 'Id'),
-            'fecha_deteccion': findHeader('Fecha de Detección', 'Fecha Detección'),
+            'fecha_deteccion': findHeader('FECHA DE DETECCIÓN', 'Fecha de Detección', 'Fecha Detección'),
+            'lider': findHeader('LÍDER', 'Líder', 'Lider'),
+            'responsable_proceso': findHeader('LÍDER', 'Líder', 'Lider', 'Responsable del Proceso'),
             'auditoria': findHeader('Auditoría', 'Auditoria'),
             'proceso': findHeader('PROCESO', 'Proceso'),
             'subproceso': findHeader('SUBPROCESO', 'Subproceso'),
@@ -129,8 +131,10 @@ class DataManager {
 
             this.rawData = [];
 
-            // La fuente oficial para el dashboard es exclusivamente la Hoja1.
-            const sheetsToProcess = ['Hoja1'];
+            // La fuente oficial para el dashboard es exclusivamente la hoja CONSOLIDADO.
+            const sheetsToProcess = ['CONSOLIDADO', 'Hoja1'].filter(
+                name => workbook.SheetNames.includes(name)
+            ).slice(0, 1);
 
             sheetsToProcess.forEach((sheetName, index) => {
                 const exists = workbook.SheetNames.includes(sheetName);

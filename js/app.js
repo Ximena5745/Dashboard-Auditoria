@@ -58,7 +58,7 @@ class Application {
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             const stats = dataManager.getStatistics();
             console.log(`📊 Total de registros (válidos): ${stats.total} — raw: ${dataManager.getData().length}`);
-            console.log(`🗂️  Hoja fuente: Hoja1 del consolidado 2026`);
+            console.log(`🗂️  Hoja fuente: CONSOLIDADO del consolidado 2026`);
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
             this.showStartupMessage();

@@ -1069,8 +1069,8 @@ class Dashboard {
                 <div class="detail-section-title"><i class="fas fa-user me-1"></i> RESPONSABILIDAD</div>
                 <div class="detail-grid">
                     <div class="detail-field">
-                        <div class="detail-field-label">RESPONSABLE DEL PROCESO</div>
-                        <div class="detail-field-value">${this.escape(record.responsable_proceso) || '—'}</div>
+                        <div class="detail-field-label">LÍDER / RESPONSABLE DEL PROCESO</div>
+                        <div class="detail-field-value">${this.escape(record.lider || record.responsable_proceso) || '—'}</div>
                     </div>
                     <div class="detail-field">
                         <div class="detail-field-label">RESPONSABLE DE LA ACCIÓN</div>
